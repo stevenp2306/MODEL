@@ -1,0 +1,644 @@
+<!--SPORTBAR--><style>.sportbar{display:flex;gap:6px;overflow-x:auto;padding:8px 12px;background:#05080e;border-bottom:1px solid #1b2f49;scrollbar-width:none;position:relative;z-index:60}.sportbar::-webkit-scrollbar{display:none}.sb-t{flex:0 0 auto;display:flex;align-items:center;gap:5px;min-height:34px;padding:0 14px;border-radius:999px;border:1px solid #1b2f49;color:#8aa0b8;font:700 12px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.1em;text-decoration:none;white-space:nowrap}.sb-t:hover{color:#e8edf5}.sb-t.off{opacity:.45}.sb-t small{font-weight:500;letter-spacing:.04em;font-size:10px}</style><nav class="sportbar" aria-label="Sports"><a class="sb-t" href="index.html">🏈 NFL</a><a class="sb-t" href="cfb.html" style="color:#f5b942;border-color:#f5b942" aria-current="page">🎓 CFB</a><a class="sb-t" href="mlb.html">⚾ MLB</a><span class="sb-t off">🏒 NHL<small>soon</small></span></nav><!--/SPORTBAR--><title>CFB Model</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+/* Committed dark design — a night-game broadcast board. Held in all three
+   theme states on purpose, so tokens are restated rather than inverted. */
+:root{
+  color-scheme:dark;
+  --ground:#0A0E12; --panel:#131A20; --panel2:#1A232B; --raise:#202B34;
+  --line:#25313A; --line-soft:#1B242C;
+  --ink:#E8EEF3; --dim:#8494A1; --faint:#5E6E7A;
+  --gold:#F0B429; --gold-dim:#8A6716; --gold-bg:#332711;
+  --cool:#4AA8B8; --cool-bg:#102A30;
+  --good:#3FD08A; --bad:#F2635A; --warn:#E8A33D;
+  --good-bg:#0F2B1F; --bad-bg:#2E1614;
+  --tabh:64px;
+}
+:root[data-theme="light"],:root[data-theme="dark"]{
+  color-scheme:dark;
+  --ground:#0A0E12; --panel:#131A20; --panel2:#1A232B; --raise:#202B34;
+  --line:#25313A; --line-soft:#1B242C;
+  --ink:#E8EEF3; --dim:#8494A1; --faint:#5E6E7A;
+  --gold:#F0B429; --gold-dim:#8A6716; --gold-bg:#332711;
+  --cool:#4AA8B8; --cool-bg:#102A30;
+  --good:#3FD08A; --bad:#F2635A; --warn:#E8A33D;
+  --good-bg:#0F2B1F; --bad-bg:#2E1614;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--ground); color:var(--ink);
+  font-family:Barlow,system-ui,-apple-system,sans-serif;
+  margin:0; padding:0 16px calc(var(--tabh) + 28px + env(safe-area-inset-bottom));
+  line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.app{max-width:1100px;margin:0 auto}
+.mono{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+
+/* ---------- top bar ---------- */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:16px 0 13px;border-bottom:1px solid var(--line);margin-bottom:16px}
+.brand{display:flex;align-items:center;gap:9px;font-family:"Barlow Condensed",sans-serif;
+  font-weight:600;font-size:22px;text-transform:uppercase;letter-spacing:.05em;color:var(--dim)}
+.brand b{color:var(--ink);font-weight:700}
+.mark{display:flex;gap:2px;align-items:flex-end;height:17px}
+.mark i{width:4px;background:var(--gold);border-radius:1px;display:block}
+.mark i:nth-child(1){height:8px}.mark i:nth-child(2){height:17px;background:var(--cool)}
+.stamp{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--faint);
+  letter-spacing:.05em;text-align:right;line-height:1.35}
+.stamp b{color:var(--gold);font-weight:500;display:block}
+
+/* ---------- tab bar: bottom on phones, inline on desktop ---------- */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:50;display:flex;
+  background:var(--panel);border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom)}
+.tabs button{flex:1;background:none;border:none;cursor:pointer;padding:9px 4px 10px;
+  display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--faint);
+  font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.06em;
+  text-transform:uppercase;position:relative;transition:color .12s}
+.tabs button svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round}
+.tabs button[aria-selected="true"]{color:var(--gold)}
+.tabs button[aria-selected="true"]::before{content:"";position:absolute;top:0;left:22%;right:22%;
+  height:2px;background:var(--gold);border-radius:0 0 2px 2px}
+.tabs button:focus-visible{outline:2px solid var(--gold);outline-offset:-3px}
+@media(min-width:760px){
+  :root{--tabh:0px}
+  .tabs{position:sticky;top:0;bottom:auto;border-top:none;border-bottom:1px solid var(--line);
+    background:linear-gradient(var(--ground) 72%,rgba(10,14,18,.86));gap:4px;margin-bottom:20px;
+    padding:6px 0 0}
+  .tabs button{flex:0 0 auto;flex-direction:row;gap:8px;padding:10px 15px 12px;font-size:11px}
+  .tabs button svg{width:16px;height:16px}
+  .tabs button[aria-selected="true"]::before{top:auto;bottom:0;left:10px;right:10px}
+  body{padding-bottom:56px}
+}
+
+.view{display:none}
+.view.on{display:block;animation:fade .18s ease-out}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+
+/* ---------- hero ---------- */
+.hero{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:5px;
+  background:
+    radial-gradient(120% 140% at 88% 0%,rgba(240,180,41,.16),transparent 58%),
+    radial-gradient(100% 130% at 6% 100%,rgba(74,168,184,.13),transparent 60%),
+    var(--panel);
+  padding:22px 20px;margin-bottom:16px}
+.hero .eyebrow{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--gold);margin-bottom:7px}
+.hero h1{font-family:"Barlow Condensed",sans-serif;font-weight:700;
+  font-size:clamp(34px,8vw,54px);line-height:.94;margin:0;text-transform:uppercase;
+  letter-spacing:.01em;text-wrap:balance}
+.hero .sub{color:var(--dim);font-size:13.5px;margin-top:8px;max-width:52ch}
+
+/* ---------- three-column record card ---------- */
+.rec3{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);
+  border-radius:5px;background:var(--panel);overflow:hidden;margin-bottom:8px}
+.rec3 div{padding:15px 14px;border-right:1px solid var(--line)}
+.rec3 div:last-child{border-right:none}
+.rec3 .k{font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--faint);display:block;margin-bottom:7px}
+.rec3 .v{font-family:"Barlow Condensed",sans-serif;font-weight:700;
+  font-size:clamp(24px,5.5vw,34px);line-height:1;font-variant-numeric:tabular-nums;display:block}
+.rec3 .p{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--gold);
+  display:block;margin-top:6px}
+.rec3 .n{font-size:11.5px;color:var(--faint);display:block;margin-top:2px}
+.foot-note{color:var(--faint);font-size:11.5px;margin:0 0 22px}
+
+/* ---------- scoreboard strip ---------- */
+.strip{display:flex;gap:9px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+.strip::-webkit-scrollbar{display:none}
+.gcard{flex:0 0 auto;width:186px;background:var(--panel);border:1px solid var(--line);
+  border-radius:4px;padding:11px 13px;position:relative;overflow:hidden}
+.gcard .tbar{position:absolute;top:0;left:0;right:0;height:2px;display:flex}
+.gcard .tbar i{flex:1}
+.gcard .when{font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--faint);
+  letter-spacing:.05em;margin-bottom:8px}
+.gcard .row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 0}
+.gcard .row .t{display:flex;align-items:center;gap:7px}
+.gcard .row .n{font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--dim)}
+
+/* ---------- sections ---------- */
+h2{font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:24px;
+  text-transform:uppercase;letter-spacing:.05em;
+  margin:30px 0 4px;display:flex;align-items:baseline;gap:11px;text-wrap:balance}
+.view > section:first-child h2{margin-top:4px}
+h2 .n{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.08em;color:var(--gold);font-weight:400}
+.blurb{color:var(--dim);font-size:13.5px;margin:0 0 15px;max-width:62ch}
+
+/* ---------- the card ---------- */
+.plays{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+.slip{position:relative;background:var(--panel);border:1px solid var(--line);
+  border-left:3px solid var(--gold);border-radius:3px;padding:19px 18px 15px;display:grid;gap:12px}
+.slip .tbar{position:absolute;top:0;left:0;right:0;height:3px;display:flex;overflow:hidden}
+.slip .tbar i{flex:1}
+.slip .top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.slip .matchup{font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--dim);letter-spacing:.05em}
+.slip .kind{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--gold);background:var(--gold-bg);
+  border-radius:2px;padding:3px 7px;white-space:nowrap}
+.slip .bet{font-family:"Barlow Condensed",sans-serif;font-weight:700;
+  font-size:clamp(30px,5.2vw,40px);line-height:1;text-transform:uppercase;
+  letter-spacing:.01em;color:var(--ink)}
+.slip .foot{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;
+  border-top:1px solid var(--line-soft);padding-top:11px}
+.stat{display:flex;flex-direction:column;gap:3px}
+.stat .k{font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--faint)}
+.stat .v{font-family:"JetBrains Mono",monospace;font-size:21px;font-weight:700;
+  font-variant-numeric:tabular-nums;line-height:1;color:var(--gold)}
+.stat .v.sm{font-size:15px;font-weight:500;color:var(--ink)}
+.meter{width:100%;height:5px;background:var(--raise);border-radius:3px;overflow:hidden;margin-top:5px}
+.meter i{display:block;height:100%;background:var(--gold);border-radius:3px}
+.empty{border:1px dashed var(--line);border-radius:3px;padding:26px 20px;text-align:center;
+  color:var(--dim);font-size:14px;background:var(--panel)}
+
+/* ---------- tables ---------- */
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:3px;background:var(--panel)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.1em;
+  text-transform:uppercase;font-weight:400;color:var(--faint);text-align:left;
+  padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap;
+  position:sticky;top:0;background:var(--panel2)}
+td{padding:9px 12px;border-bottom:1px solid var(--line-soft);white-space:nowrap;vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--panel2)}
+.num{font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums;text-align:right}
+.team{font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:15px;letter-spacing:.03em}
+.sub{color:var(--faint);font-size:11.5px;font-family:"JetBrains Mono",monospace}
+.pos{font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.08em;
+  color:var(--dim);background:var(--raise);border-radius:2px;padding:2px 5px}
+.good{color:var(--good)} .bad{color:var(--bad)} .goldtx{color:var(--gold)}
+.tag{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.09em;
+  text-transform:uppercase;border-radius:2px;padding:3px 7px;white-space:nowrap}
+.tag.play{color:var(--gold);background:var(--gold-bg)}
+.tag.pass{color:var(--faint);background:var(--panel2)}
+.tag.out{color:var(--bad);background:var(--bad-bg)}
+.tag.dbt{color:var(--warn);background:var(--gold-bg)}
+
+.tbar-in{position:absolute;top:0;left:0;right:0;height:3px;display:flex}
+.mu{display:flex;align-items:center;gap:7px}
+.tchip{width:3px;height:15px;border-radius:2px;flex:0 0 auto}
+.at{color:var(--faint);font-size:12px;font-family:"JetBrains Mono",monospace}
+.wp{display:flex;height:8px;border-radius:2px;overflow:hidden;min-width:96px;gap:1px;background:var(--raise)}
+.wp i{display:block}
+.div{position:relative;width:108px;height:16px}
+.div::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line);transform:translateX(-.5px)}
+.div i{position:absolute;top:4px;height:8px;border-radius:2px}
+.div i.p{left:50%;background:var(--gold)}
+.div i.n{right:50%;background:var(--cool)}
+.bar{width:100%;min-width:64px;height:8px;background:var(--raise);border-radius:2px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--gold);border-radius:2px}
+
+.tiles{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:14px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:14px 16px;
+  display:flex;flex-direction:column;gap:6px}
+.tile .k{font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--faint)}
+.tile .v{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:32px;line-height:1;
+  font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.tile .v.up{color:var(--good)} .tile .v.down{color:var(--bad)}
+.res{font-family:"JetBrains Mono",monospace;font-weight:700;font-size:12px;letter-spacing:.06em}
+
+.filters{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 14px}
+.filters button{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.06em;
+  padding:5px 10px;border:1px solid var(--line);background:var(--panel);
+  color:var(--dim);border-radius:2px;cursor:pointer;transition:all .12s}
+.filters button:hover{color:var(--ink);border-color:var(--faint)}
+.filters button[aria-pressed="true"]{background:var(--gold);color:#12160D;border-color:var(--gold);font-weight:700}
+.filters button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+/* ---------- parlay builder ---------- */
+.who{display:flex;align-items:center;gap:9px}
+.pick{width:26px;height:26px;border-radius:3px;border:1px solid var(--line);background:var(--panel2);
+  color:var(--faint);font-family:"JetBrains Mono",monospace;font-size:14px;line-height:1;cursor:pointer;
+  display:grid;place-items:center;padding:0;transition:all .12s;flex:0 0 auto}
+.pick:hover{border-color:var(--faint);color:var(--ink)}
+.pick[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:#12160D;font-weight:700}
+.pick:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+tr.on td{background:var(--gold-bg)}
+.tray{position:fixed;left:0;right:0;bottom:var(--tabh);z-index:40;background:var(--panel2);
+  border-top:2px solid var(--gold);padding:12px 16px;
+  box-shadow:0 -8px 28px rgba(0,0,0,.55)}
+.tray .in{max-width:1100px;margin:0 auto;display:flex;flex-wrap:wrap;gap:12px 22px;align-items:center}
+.tray .lab{font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--faint);display:block;margin-bottom:2px}
+.tray .big{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:26px;line-height:1;
+  font-variant-numeric:tabular-nums}
+.tray .legs{flex:1 1 210px;min-width:0;font-size:12.5px;color:var(--dim);line-height:1.45}
+.tray button.clr{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.07em;
+  padding:7px 12px;border:1px solid var(--line);background:var(--panel);color:var(--dim);
+  border-radius:3px;cursor:pointer}
+.tray button.clr:hover{color:var(--ink);border-color:var(--faint)}
+.tray button.clr:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.warn-row{flex:1 1 100%;font-size:12.5px;color:var(--warn);display:flex;gap:7px;align-items:flex-start;
+  border-top:1px solid var(--line);padding-top:9px;margin-top:2px}
+body.tray-open{padding-bottom:calc(var(--tabh) + 210px + env(safe-area-inset-bottom))}
+
+footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--line);
+  color:var(--faint);font-size:12px;max-width:62ch;line-height:1.65}
+footer b{color:var(--dim);font-weight:500}
+
+@media(max-width:620px){
+  .slip{padding:17px 15px 14px}
+  h2{font-size:21px;margin-top:26px}
+  td,th{padding:8px 10px}
+  .rec3{grid-template-columns:1fr}
+  .rec3 div{border-right:none;border-bottom:1px solid var(--line)}
+  .rec3 div:last-child{border-bottom:none}
+  .stack thead{display:none}
+  .stack,.stack tbody,.stack tr,.stack td{display:block;width:100%}
+  .stack tr{border-bottom:1px solid var(--line);padding:11px 13px}
+  .stack tr:last-child{border-bottom:none}
+  .stack td{border:none;padding:2px 0;white-space:normal;display:flex;
+    justify-content:space-between;align-items:center;gap:14px}
+  .stack td::before{content:attr(data-l);font-family:"JetBrains Mono",monospace;font-size:9.5px;
+    letter-spacing:.11em;text-transform:uppercase;color:var(--faint);flex:0 0 auto}
+  .stack td:first-child::before,.stack td[data-l=""]::before{display:none}
+  .stack td.num{text-align:right}
+  .scroll:has(.stack){overflow-x:visible}
+  .tray .big{font-size:22px}
+  body.tray-open{padding-bottom:calc(var(--tabh) + 250px + env(safe-area-inset-bottom))}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<div class="app">
+<header class="topbar">
+  <div class="brand"><span class="mark"><i></i><i></i></span>CFB <b>Model</b></div>
+  <div class="stamp" id="stamp"></div>
+</header>
+
+<nav class="tabs" id="tabs" role="tablist" aria-label="Sections"></nav>
+
+<main>
+  <div class="view" id="v-home"    role="tabpanel"></div>
+  <div class="view" id="v-games"   role="tabpanel"></div>
+  <div class="view" id="v-bets"    role="tabpanel"></div>
+  <div class="view" id="v-tracker" role="tabpanel"></div>
+  <div class="view" id="v-explore" role="tabpanel"></div>
+</main>
+
+<footer>
+  <b>Model output, not advice.</b> Lines move — check your book before you bet.
+  Edges are the model's number against the book's, in points. Power ratings are
+  points against an average FBS team on a neutral field, and they move themselves
+  every week by a quarter of each miss. Games where either side is unrated are
+  left off the slate.
+</footer>
+</div>
+
+<script>
+const D = {"generated": "Sat Sep 26, 10:00 AM", "season": 2026, "teams": {"Ohio State": {"conf": "Big Ten", "rank": 1, "power": 33, "lean": 0.8}, "Oregon": {"conf": "Big Ten", "rank": 2, "power": 24.2, "lean": -0.7}, "Indiana": {"conf": "Big Ten", "rank": 6, "power": 23.8, "lean": 0.5}, "Texas": {"conf": "SEC", "rank": 4, "power": 23.1, "lean": 2}, "Georgia": {"conf": "SEC", "rank": 5, "power": 26.6, "lean": 0.8}, "Oklahoma": {"conf": "SEC", "rank": 9, "power": 15.3, "lean": -1.2}, "Notre Dame": {"conf": "Independent", "rank": 3, "power": 21.1, "lean": 0}, "Miami": {"conf": "ACC", "rank": 7, "power": 20.3, "lean": -1.4}, "Texas Tech": {"conf": "Big 12", "rank": 8, "power": 16.6, "lean": 1.8}, "USC": {"conf": "Big Ten", "rank": 14, "power": 15.3, "lean": 1.3}, "Texas A&M": {"conf": "SEC", "rank": 11, "power": 18, "lean": -0.5}, "Alabama": {"conf": "SEC", "rank": 13, "power": 18.5, "lean": 0.2}, "Tennessee": {"conf": "SEC", "rank": 17, "power": 15.8, "lean": 4.3}, "Missouri": {"conf": "SEC", "rank": 23, "power": 10.3, "lean": 2.2}, "Michigan": {"conf": "Big Ten", "rank": 15, "power": 14.1, "lean": -2.2}, "LSU": {"conf": "SEC", "rank": 10, "power": 12.9, "lean": 0}, "BYU": {"conf": "Big 12", "rank": 16, "power": 10.6, "lean": 0}, "South Carolina": {"conf": "SEC", "rank": 28, "power": 5.3, "lean": -0.2}, "Iowa": {"conf": "Big Ten", "rank": 21, "power": 7.4, "lean": -2.8}, "Ole Miss": {"conf": "SEC", "rank": 12, "power": 12.8, "lean": 0}, "Penn State": {"conf": "Big Ten", "rank": 18, "power": 11.7, "lean": 0.2}, "Florida": {"conf": "SEC", "rank": 22, "power": 9.7, "lean": 0}, "Florida State": {"conf": "ACC", "rank": 38, "power": 8.7, "lean": -0.5}, "Washington": {"conf": "Big Ten", "rank": 19, "power": 5.7, "lean": 0}, "Utah": {"conf": "Big 12", "rank": 24, "power": 12.5, "lean": 0.8}, "Virginia Tech": {"conf": "ACC", "rank": 39, "power": 11.7, "lean": 0}, "Illinois": {"conf": "Big Ten", "rank": 29, "power": 4.1, "lean": 0.8}, "Kansas State": {"conf": "Big 12", "rank": 34, "power": 4.4, "lean": 0.5}, "SMU": {"conf": "ACC", "rank": 20, "power": 3.3, "lean": 0}, "Houston": {"conf": "Big 12", "rank": 26, "power": 5.1, "lean": -1.2}, "Nebraska": {"conf": "Big Ten", "rank": 33, "power": 7.3, "lean": -2.2}, "Louisville": {"conf": "ACC", "rank": 25, "power": 6.4, "lean": 0}, "Arkansas": {"conf": "SEC", "rank": 49, "power": -0.7, "lean": 3.2}, "Minnesota": {"conf": "Big Ten", "rank": 40, "power": 2.6, "lean": -0.8}, "Maryland": {"conf": "Big Ten", "rank": 52, "power": 3.4, "lean": 0}, "Mississippi State": {"conf": "SEC", "rank": 51, "power": 8.9, "lean": 0.5}, "Clemson": {"conf": "ACC", "rank": 27, "power": 1, "lean": 0}, "Arizona": {"conf": "Big 12", "rank": 30, "power": 2.2, "lean": 0}, "Arizona State": {"conf": "Big 12", "rank": 41, "power": 1.6, "lean": 0}, "Rutgers": {"conf": "Big Ten", "rank": 62, "power": 3.5, "lean": -0.2}, "Pittsburgh": {"conf": "ACC", "rank": 35, "power": 2, "lean": -1.2}, "TCU": {"conf": "Big 12", "rank": 31, "power": 2.5, "lean": -2.2}, "Oklahoma State": {"conf": "Big 12", "rank": 44, "power": 6.6, "lean": 2.3}, "UCF": {"conf": "Big 12", "rank": 59, "power": 0.7, "lean": 1.8}, "Auburn": {"conf": "SEC", "rank": 32, "power": 2.5, "lean": 1.7}, "Wake Forest": {"conf": "ACC", "rank": 58, "power": -0.4, "lean": -1.8}, "Boise State": {"conf": "Pac-12", "rank": 43, "power": 1.2, "lean": -0.7}, "Kansas": {"conf": "Big 12", "rank": 56, "power": -2.5, "lean": -0.2}, "Virginia": {"conf": "ACC", "rank": 37, "power": -4.2, "lean": -0.2}, "Vanderbilt": {"conf": "SEC", "rank": 36, "power": -2.5, "lean": 0}, "Army": {"conf": "American", "rank": 81, "power": -4.7, "lean": -0.8}, "West Virginia": {"conf": "Big 12", "rank": 67, "power": 0.8, "lean": 0.8}, "Wisconsin": {"conf": "Big Ten", "rank": 60, "power": 0.5, "lean": 0}, "Syracuse": {"conf": "ACC", "rank": 70, "power": -4.6, "lean": 0.5}, "San Diego State": {"conf": "Pac-12", "rank": 71, "power": -8.8, "lean": 0}, "North Dakota State": {"conf": "Independent", "rank": 73, "power": -0.5, "lean": -1.2}, "Kentucky": {"conf": "SEC", "rank": 55, "power": -3, "lean": 2.8}, "Old Dominion": {"conf": "Sun Belt", "rank": 91, "power": -8.5, "lean": 0.5}, "Navy": {"conf": "American", "rank": 64, "power": -6.1, "lean": -0.2}, "UCLA": {"conf": "Big Ten", "rank": 42, "power": 1.1, "lean": 0}, "Louisiana Tech": {"conf": "Conference USA", "rank": 99, "power": -9.6, "lean": 0}, "Iowa State": {"conf": "Big 12", "rank": 69, "power": 1.9, "lean": -0.2}, "Georgia Tech": {"conf": "ACC", "rank": 47, "power": -5.4, "lean": -1.2}, "Northwestern": {"conf": "Big Ten", "rank": 48, "power": -1.2, "lean": 0}, "Duke": {"conf": "ACC", "rank": 46, "power": 1.5, "lean": -0.7}, "NC State": {"conf": "ACC", "rank": 45, "power": -4.5, "lean": -0.2}, "California": {"conf": "ACC", "rank": 50, "power": -3.1, "lean": 0}, "Purdue": {"conf": "Big Ten", "rank": 82, "power": -6.9, "lean": 0.8}, "Cincinnati": {"conf": "Big 12", "rank": 54, "power": -7.2, "lean": -0.5}, "Baylor": {"conf": "Big 12", "rank": 53, "power": -2.8, "lean": 1.7}, "Fresno State": {"conf": "Pac-12", "rank": 75, "power": -2.7, "lean": -1.9}, "New Mexico": {"conf": "Mountain West", "rank": 68, "power": -0.4, "lean": 0}, "UNLV": {"conf": "Mountain West", "rank": 57, "power": -9.7, "lean": 0.8}, "UTSA": {"conf": "American", "rank": 63, "power": -3.7, "lean": 1.8}, "Troy": {"conf": "Sun Belt", "rank": 93, "power": -4.2, "lean": -0.2}, "Michigan State": {"conf": "Big Ten", "rank": 66, "power": -1.4, "lean": -1.5}, "Air Force": {"conf": "Mountain West", "rank": 77, "power": -8.5, "lean": 1.5}, "South Florida": {"conf": "American", "rank": 83, "power": -5.1, "lean": 0.2}, "North Carolina": {"conf": "ACC", "rank": 61, "power": -7.1, "lean": -2.2}, "Memphis": {"conf": "American", "rank": 72, "power": -10.4, "lean": 1}, "Jacksonville State": {"conf": "Conference USA", "rank": 98, "power": -11.2, "lean": -2.8}, "Colorado": {"conf": "Big 12", "rank": 65, "power": -12, "lean": -1.2}, "James Madison": {"conf": "Sun Belt", "rank": 78, "power": -6.5, "lean": -0.5}, "Western Kentucky": {"conf": "Conference USA", "rank": 87, "power": -12.4, "lean": 0}, "Buffalo": {"conf": "MAC", "rank": 114, "power": -16.3, "lean": -1.8}, "Kennesaw State": {"conf": "Conference USA", "rank": 105, "power": -14, "lean": -0.8}, "Boston College": {"conf": "ACC", "rank": 76, "power": -14.3, "lean": -0.5}, "Delaware": {"conf": "Conference USA", "rank": 113, "power": -11.4, "lean": 0.5}, "Stanford": {"conf": "ACC", "rank": 74, "power": -14.4, "lean": -2.8}, "Texas State": {"conf": "Pac-12", "rank": 85, "power": -10.6, "lean": 2}, "Tulane": {"conf": "American", "rank": 86, "power": -9.8, "lean": -0.7}, "Hawaii": {"conf": "Mountain West", "rank": 84, "power": -12.2, "lean": -1.4}, "Georgia Southern": {"conf": "Sun Belt", "rank": 102, "power": -11.9, "lean": -0.8}, "Georgia State": {"conf": "Sun Belt", "rank": 133, "power": -9.8, "lean": 3.2}, "Louisiana": {"conf": "Sun Belt", "rank": 104, "power": -11.8, "lean": 0}, "Eastern Michigan": {"conf": "MAC", "rank": 118, "power": -19.1, "lean": -1.3}, "Miami (OH)": {"conf": "MAC", "rank": 79, "power": -12, "lean": -1.2}, "Colorado State": {"conf": "Pac-12", "rank": 101, "power": -12.4, "lean": -2}, "Appalachian State": {"conf": "Sun Belt", "rank": 111, "power": -13.8, "lean": -0.2}, "Liberty": {"conf": "Conference USA", "rank": 89, "power": -10.9, "lean": -0.5}, "Rice": {"conf": "American", "rank": 121, "power": -19.7, "lean": -2.2}, "Temple": {"conf": "American", "rank": 103, "power": -13.8, "lean": -0.8}, "Washington State": {"conf": "Pac-12", "rank": 88, "power": -12.6, "lean": 0}, "Wyoming": {"conf": "Mountain West", "rank": 106, "power": -17.8, "lean": -2}, "South Dakota State (FCS)": {"conf": "FCS \u2014 strong", "rank": "FCS", "power": -14.9, "lean": 0}, "East Carolina": {"conf": "American", "rank": 80, "power": -13.3, "lean": 0.2}, "Marshall": {"conf": "Sun Belt", "rank": 90, "power": -15.6, "lean": 0.2}, "UConn": {"conf": "Independent", "rank": 109, "power": -14.6, "lean": 1.5}, "Oregon State": {"conf": "Pac-12", "rank": 94, "power": -12.8, "lean": -1.2}, "Utah State": {"conf": "Pac-12", "rank": 97, "power": -14.6, "lean": 3.5}, "Toledo": {"conf": "MAC", "rank": 107, "power": -15.8, "lean": -1.5}, "Southern Miss": {"conf": "Sun Belt", "rank": 130, "power": -22.2, "lean": -1.2}, "South Alabama": {"conf": "Sun Belt", "rank": 115, "power": -15.6, "lean": -0.5}, "Middle Tennessee": {"conf": "Conference USA", "rank": 134, "power": -15.4, "lean": 1.8}, "Sacramento State": {"conf": "Big Sky (FBS Ind.)", "rank": 132, "power": -21.2, "lean": -0.1}, "Arkansas State": {"conf": "Sun Belt", "rank": 100, "power": -15.7, "lean": 0.2}, "Nevada": {"conf": "Mountain West", "rank": 108, "power": -18.2, "lean": 0}, "Western Michigan": {"conf": "MAC", "rank": 95, "power": -15, "lean": -2.2}, "Central Michigan": {"conf": "MAC", "rank": 110, "power": -14.7, "lean": 0}, "Tulsa": {"conf": "American", "rank": 96, "power": -17.2, "lean": 2.3}, "Florida Atlantic": {"conf": "American", "rank": 92, "power": -14.4, "lean": 0}, "Bowling Green": {"conf": "MAC", "rank": 116, "power": -25.2, "lean": -2.2}, "FIU": {"conf": "Conference USA", "rank": 117, "power": -16.8, "lean": 0.2}, "San Jose State": {"conf": "Mountain West", "rank": 123, "power": -19.9, "lean": 2}, "Charlotte": {"conf": "American", "rank": 138, "power": -18.5, "lean": -2.5}, "Ball State": {"conf": "MAC", "rank": 135, "power": -23.1, "lean": 0.8}, "North Texas": {"conf": "American", "rank": 112, "power": -19, "lean": 0.5}, "Tarleton State (FCS)": {"conf": "FCS \u2014 solid", "rank": "FCS", "power": -20.4, "lean": -2.2}, "New Mexico State": {"conf": "Conference USA", "rank": 122, "power": -20.3, "lean": -0.5}, "Ohio": {"conf": "MAC", "rank": 120, "power": -18, "lean": -2.2}, "Northern Illinois": {"conf": "Mountain West", "rank": 127, "power": -21.7, "lean": -2.8}, "UAB": {"conf": "American", "rank": 124, "power": -20.5, "lean": 0.8}, "Coastal Carolina": {"conf": "Sun Belt", "rank": 119, "power": -18.9, "lean": 0.8}, "Missouri State": {"conf": "Conference USA", "rank": 125, "power": -23.4, "lean": -0.5}, "Sam Houston": {"conf": "Conference USA", "rank": 136, "power": -21.2, "lean": -0.2}, "Akron": {"conf": "MAC", "rank": 126, "power": -25.4, "lean": -1.8}, "Rhode Island (FCS)": {"conf": "FCS \u2014 solid", "rank": "FCS", "power": -23.7, "lean": -0.8}, "UTEP": {"conf": "Mountain West", "rank": 129, "power": -22, "lean": -1.2}, "UL Monroe": {"conf": "Sun Belt", "rank": 131, "power": -28, "lean": 0.5}, "Kent State": {"conf": "MAC", "rank": 128, "power": -24.5, "lean": -0.2}, "Youngstown State (FCS)": {"conf": "FCS \u2014 solid", "rank": "FCS", "power": -27.4, "lean": 2.8}, "Idaho State (FCS)": {"conf": "FCS \u2014 average", "rank": "FCS", "power": -27.6, "lean": 3.5}, "Abilene Christian (FCS)": {"conf": "FCS \u2014 solid", "rank": "FCS", "power": -27.7, "lean": 1.8}, "Eastern Kentucky (FCS)": {"conf": "FCS \u2014 solid", "rank": "FCS", "power": -28, "lean": 0.7}, "UMass": {"conf": "MAC", "rank": 137, "power": -28.1, "lean": -0.2}, "Idaho (FCS)": {"conf": "FCS \u2014 solid", "rank": "FCS", "power": -28.3, "lean": 0.8}, "Southeastern Louisiana (FCS)": {"conf": "FCS \u2014 average", "rank": "FCS", "power": -26.9, "lean": -0.5}, "Austin Peay (FCS)": {"conf": "FCS \u2014 average", "rank": "FCS", "power": -30, "lean": 0}, "Tennessee State (FCS)": {"conf": "FCS \u2014 average", "rank": "FCS", "power": -31.1, "lean": 0.8}, "Maine (FCS)": {"conf": "FCS \u2014 average", "rank": "FCS", "power": -28.5, "lean": -0.2}, "Lamar (FCS)": {"conf": "FCS \u2014 average", "rank": "FCS", "power": -31.6, "lean": 0}, "Northern Arizona (FCS)": {"conf": "FCS \u2014 average", "rank": "FCS", "power": -32, "lean": 0}, "West Georgia (FCS)": {"conf": "FCS \u2014 average", "rank": "FCS", "power": -36.8, "lean": -0.8}, "Southeast Missouri State (FCS)": {"conf": "FCS \u2014 average", "rank": "FCS", "power": -35.2, "lean": -0.2}, "UAlbany (FCS)": {"conf": "FCS \u2014 average", "rank": "FCS", "power": -35.3, "lean": -1.8}, "Towson (FCS)": {"conf": "FCS \u2014 average", "rank": "FCS", "power": -32.3, "lean": -0.2}, "The Citadel (FCS)": {"conf": "FCS \u2014 weak", "rank": "FCS", "power": -35.8, "lean": -2.5}, "Lafayette (FCS)": {"conf": "FCS \u2014 weak", "rank": "FCS", "power": -36.6, "lean": 1.5}, "New Hampshire (FCS)": {"conf": "FCS \u2014 average", "rank": "FCS", "power": -36.9, "lean": 0.5}, "Furman (FCS)": {"conf": "FCS \u2014 average", "rank": "FCS", "power": -37, "lean": 4.3}, "Nicholls (FCS)": {"conf": "FCS \u2014 average", "rank": "FCS", "power": -40.2, "lean": 0.5}, "Murray State (FCS)": {"conf": "FCS \u2014 weak", "rank": "FCS", "power": -41.2, "lean": 1.8}, "Alcorn State (FCS)": {"conf": "FCS \u2014 weak", "rank": "FCS", "power": -38.3, "lean": -1.2}, "UT Rio Grande Valley (FCS)": {"conf": "FCS \u2014 weak", "rank": "FCS", "power": -38.4, "lean": 1.8}, "North Alabama (FCS)": {"conf": "FCS \u2014 average", "rank": "FCS", "power": -39.2, "lean": 3.2}, "Houston Christian (FCS)": {"conf": "FCS \u2014 weak", "rank": "FCS", "power": -39.3, "lean": -2.2}, "Charleston Southern (FCS)": {"conf": "FCS \u2014 weak", "rank": "FCS", "power": -39.4, "lean": -0.8}, "Bryant (FCS)": {"conf": "FCS \u2014 average", "rank": "FCS", "power": -39.7, "lean": -0.8}, "Duquesne (FCS)": {"conf": "FCS \u2014 weak", "rank": "FCS", "power": -43.5, "lean": 1.5}, "Utah Tech (FCS)": {"conf": "FCS \u2014 weak", "rank": "FCS", "power": -41.4, "lean": 0}, "Merrimack (FCS)": {"conf": "FCS \u2014 weak", "rank": "FCS", "power": -41.5, "lean": 0.5}, "North Carolina A&T (FCS)": {"conf": "FCS \u2014 weak", "rank": "FCS", "power": -42.3, "lean": 3.2}, "LIU (FCS)": {"conf": "FCS \u2014 weak", "rank": "FCS", "power": -42.9, "lean": -0.2}, "Morgan State (FCS)": {"conf": "FCS \u2014 weak", "rank": "FCS", "power": -42.9, "lean": 0}, "Indiana State (FCS)": {"conf": "FCS \u2014 weak", "rank": "FCS", "power": -43.4, "lean": 0.8}, "Eastern Illinois (FCS)": {"conf": "FCS \u2014 weak", "rank": "FCS", "power": -43.8, "lean": -0.8}, "Portland State (FCS)": {"conf": "FCS \u2014 weak", "rank": "FCS", "power": -44.2, "lean": 0}, "Mercyhurst (FCS)": {"conf": "FCS \u2014 weak", "rank": "FCS", "power": -47.8, "lean": 0}, "Fordham (FCS)": {"conf": "FCS \u2014 weak", "rank": "FCS", "power": -48.3, "lean": 2.3}, "Bethune-Cookman (FCS)": {"conf": "FCS \u2014 weak", "rank": "FCS", "power": -45.4, "lean": 1.8}, "Hampton (FCS)": {"conf": "FCS \u2014 weak", "rank": "FCS", "power": -46.2, "lean": 0}, "Arkansas-Pine Bluff (FCS)": {"conf": "FCS \u2014 weak", "rank": "FCS", "power": -46.7, "lean": 2.2}, "Norfolk State (FCS)": {"conf": "FCS \u2014 weak", "rank": "FCS", "power": -47.1, "lean": 0.5}, "VMI (FCS)": {"conf": "FCS \u2014 weak", "rank": "FCS", "power": -47.3, "lean": 0}, "Northwestern State (FCS)": {"conf": "FCS \u2014 weak", "rank": "FCS", "power": -47.4, "lean": 0}, "Mississippi Valley State (FCS)": {"conf": "FCS \u2014 weak", "rank": "FCS", "power": -51.8, "lean": 0}}, "games": [{"date": "Sat 9/26", "away": "Wake Forest", "home": "Louisville", "neutral": false, "bookSp": -12.5, "bookTot": 57.5, "mSpread": -9.5, "mTotal": 50.5, "sEdge": -3, "sPlay": "pass", "sTier": "\u2014", "tEdge": -7, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Texas", "home": "Tennessee", "neutral": false, "bookSp": 5, "bookTot": 54.5, "mSpread": 5, "mTotal": 59, "sEdge": 0, "sPlay": "pass", "sTier": "\u2014", "tEdge": 4.5, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Ball State", "home": "Kent State", "neutral": false, "bookSp": -3, "bookTot": 51, "mSpread": -1, "mTotal": 53, "sEdge": -2, "sPlay": "pass", "sTier": "\u2014", "tEdge": 2, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "UNLV", "home": "Akron", "neutral": false, "bookSp": 13.5, "bookTot": 52.5, "mSpread": 13, "mTotal": 51.5, "sEdge": 0.5, "sPlay": "pass", "sTier": "\u2014", "tEdge": -1, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Colorado State", "home": "UTSA", "neutral": false, "bookSp": -14, "bookTot": 57.5, "mSpread": -11, "mTotal": 52.5, "sEdge": -3, "sPlay": "pass", "sTier": "\u2014", "tEdge": -5, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Illinois", "home": "Ohio State", "neutral": false, "bookSp": -26.5, "bookTot": 54.5, "mSpread": -31.5, "mTotal": 54, "sEdge": 5, "sPlay": "pass", "sTier": "\u2014", "tEdge": -0.5, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Virginia Tech", "home": "Boston College", "neutral": false, "bookSp": 14.5, "bookTot": 46, "mSpread": 23.5, "mTotal": 52, "sEdge": -9, "sPlay": "Virginia Tech -14.5", "sTier": "\ud83d\udc4d LEAN", "tEdge": 6, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Colorado", "home": "Baylor", "neutral": false, "bookSp": -9.5, "bookTot": 55, "mSpread": -11.5, "mTotal": 53, "sEdge": 2, "sPlay": "pass", "sTier": "\u2014", "tEdge": -2, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Sam Houston", "home": "Texas Tech", "neutral": false, "bookSp": -34.5, "bookTot": 56.5, "mSpread": -40.5, "mTotal": 54, "sEdge": 6, "sPlay": "pass", "sTier": "\u2014", "tEdge": -2.5, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "San Diego State", "home": "Toledo", "neutral": false, "bookSp": -3, "bookTot": 50.25, "mSpread": 4.5, "mTotal": 51, "sEdge": -7.5, "sPlay": "pass", "sTier": "\u2014", "tEdge": 0.75, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "South Alabama", "home": "Kentucky", "neutral": false, "bookSp": -20.5, "bookTot": 54, "mSpread": -15, "mTotal": 55, "sEdge": -5.5, "sPlay": "pass", "sTier": "\u2014", "tEdge": 1, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "UCLA", "home": "Maryland", "neutral": false, "bookSp": 1.5, "bookTot": 56.5, "mSpread": -5, "mTotal": 52.5, "sEdge": 6.5, "sPlay": "pass", "sTier": "\u2014", "tEdge": -4, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Northern Illinois", "home": "Georgia State", "neutral": false, "bookSp": -10.25, "bookTot": 56.5, "mSpread": -14.5, "mTotal": 53, "sEdge": 4.25, "sPlay": "pass", "sTier": "\u2014", "tEdge": -3.5, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Notre Dame", "home": "Purdue", "neutral": false, "bookSp": 27.5, "bookTot": 57.5, "mSpread": 25.5, "mTotal": 53.5, "sEdge": 2, "sPlay": "pass", "sTier": "\u2014", "tEdge": -4, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Hawaii", "home": "Wyoming", "neutral": false, "bookSp": 2, "bookTot": 43.5, "mSpread": 3, "mTotal": 49, "sEdge": -1, "sPlay": "pass", "sTier": "\u2014", "tEdge": 5.5, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "New Mexico", "home": "New Mexico State", "neutral": false, "bookSp": 11.5, "bookTot": 48, "mSpread": 17.5, "mTotal": 52, "sEdge": -6, "sPlay": "pass", "sTier": "\u2014", "tEdge": 4, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Iowa", "home": "Michigan", "neutral": false, "bookSp": -5.5, "bookTot": 38.5, "mSpread": -9, "mTotal": 47.5, "sEdge": 3.5, "sPlay": "pass", "sTier": "\u2014", "tEdge": 9, "tPlay": "OVER 38.5", "tTier": "\ud83d\udc4d LEAN"}, {"date": "Sat 9/26", "away": "Oklahoma", "home": "Georgia", "neutral": false, "bookSp": -13.5, "bookTot": 44, "mSpread": -14, "mTotal": 52, "sEdge": 0.5, "sPlay": "pass", "sTier": "\u2014", "tEdge": 8, "tPlay": "OVER 44.0", "tTier": "\ud83d\udc4d LEAN"}, {"date": "Sat 9/26", "away": "Ole Miss", "home": "Florida", "neutral": false, "bookSp": -3.5, "bookTot": 59, "mSpread": 0.5, "mTotal": 52.5, "sEdge": -4, "sPlay": "pass", "sTier": "\u2014", "tEdge": -6.5, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Utah", "home": "Iowa State", "neutral": false, "bookSp": 7.5, "bookTot": 47.5, "mSpread": 8, "mTotal": 53, "sEdge": -0.5, "sPlay": "pass", "sTier": "\u2014", "tEdge": 5.5, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Boise State", "home": "Western Michigan", "neutral": false, "bookSp": 7.5, "bookTot": 50.5, "mSpread": 13.5, "mTotal": 49.5, "sEdge": -6, "sPlay": "pass", "sTier": "\u2014", "tEdge": -1, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "UConn", "home": "Miami (OH)", "neutral": false, "bookSp": -3, "bookTot": 51.5, "mSpread": -5, "mTotal": 53, "sEdge": 2, "sPlay": "pass", "sTier": "\u2014", "tEdge": 1.5, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "TCU", "home": "UCF", "neutral": false, "bookSp": 3, "bookTot": 48.5, "mSpread": -0.5, "mTotal": 52, "sEdge": 3.5, "sPlay": "pass", "sTier": "\u2014", "tEdge": 3.5, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Houston", "home": "Georgia Southern", "neutral": false, "bookSp": 17.5, "bookTot": 56.5, "mSpread": 14.5, "mTotal": 50.5, "sEdge": 3, "sPlay": "pass", "sTier": "\u2014", "tEdge": -6, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Vanderbilt", "home": "Auburn", "neutral": false, "bookSp": -9.5, "bookTot": 55.5, "mSpread": -7.5, "mTotal": 54, "sEdge": -2, "sPlay": "pass", "sTier": "\u2014", "tEdge": -1.5, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Wisconsin", "home": "Penn State", "neutral": false, "bookSp": -10, "bookTot": 44, "mSpread": -13.5, "mTotal": 52.5, "sEdge": 3.5, "sPlay": "pass", "sTier": "\u2014", "tEdge": 8.5, "tPlay": "OVER 44.0", "tTier": "\ud83d\udc4d LEAN"}, {"date": "Sat 9/26", "away": "South Florida", "home": "Bowling Green", "neutral": false, "bookSp": 18.5, "bookTot": 48.5, "mSpread": 17.5, "mTotal": 50.5, "sEdge": 1, "sPlay": "pass", "sTier": "\u2014", "tEdge": 2, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Nebraska", "home": "Michigan State", "neutral": false, "bookSp": 6, "bookTot": 49, "mSpread": 6, "mTotal": 49, "sEdge": 0, "sPlay": "pass", "sTier": "\u2014", "tEdge": 0, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Delaware", "home": "Virginia", "neutral": false, "bookSp": -19.5, "bookTot": 52.5, "mSpread": -9.5, "mTotal": 53, "sEdge": -10, "sPlay": "Delaware +19.5", "sTier": "\ud83d\udc4d LEAN", "tEdge": 0.5, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "LIU (FCS)", "home": "FIU", "neutral": false, "bookSp": -37.5, "bookTot": 53.5, "mSpread": -28.5, "mTotal": 52.5, "sEdge": -9, "sPlay": "LIU (FCS) +37.5", "sTier": "\ud83d\udc4d LEAN", "tEdge": -1, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "James Madison", "home": "Old Dominion", "neutral": false, "bookSp": 6, "bookTot": 43.5, "mSpread": -0.5, "mTotal": 52.5, "sEdge": 6.5, "sPlay": "pass", "sTier": "\u2014", "tEdge": 9, "tPlay": "OVER 43.5", "tTier": "\ud83d\udc4d LEAN"}, {"date": "Sat 9/26", "away": "Louisiana", "home": "Charlotte", "neutral": false, "bookSp": 10, "bookTot": 49, "mSpread": 4, "mTotal": 50, "sEdge": 6, "sPlay": "pass", "sTier": "\u2014", "tEdge": 1, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Central Michigan", "home": "Miami", "neutral": false, "bookSp": -41.5, "bookTot": 53.5, "mSpread": -37.5, "mTotal": 51, "sEdge": -4, "sPlay": "pass", "sTier": "\u2014", "tEdge": -2.5, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "South Carolina", "home": "Alabama", "neutral": false, "bookSp": -12.5, "bookTot": 54, "mSpread": -15.5, "mTotal": 52.5, "sEdge": 3, "sPlay": "pass", "sTier": "\u2014", "tEdge": -1.5, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Middle Tennessee", "home": "Jacksonville State", "neutral": false, "bookSp": -7.25, "bookTot": 51.5, "mSpread": -6.5, "mTotal": 51.5, "sEdge": -0.75, "sPlay": "pass", "sTier": "\u2014", "tEdge": 0, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Oklahoma State", "home": "West Virginia", "neutral": false, "bookSp": -2, "bookTot": 61, "mSpread": 3.5, "mTotal": 55.5, "sEdge": -5.5, "sPlay": "pass", "sTier": "\u2014", "tEdge": -5.5, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Kansas State", "home": "Cincinnati", "neutral": false, "bookSp": 6, "bookTot": 55.5, "mSpread": 9, "mTotal": 52.5, "sEdge": -3, "sPlay": "pass", "sTier": "\u2014", "tEdge": -3, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Kennesaw State", "home": "Arkansas State", "neutral": false, "bookSp": -6.5, "bookTot": 52.5, "mSpread": -1, "mTotal": 52, "sEdge": -5.5, "sPlay": "pass", "sTier": "\u2014", "tEdge": -0.5, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Mercyhurst (FCS)", "home": "Western Kentucky", "neutral": false, "bookSp": -40.5, "bookTot": 58.5, "mSpread": -38, "mTotal": 52.5, "sEdge": -2.5, "sPlay": "pass", "sTier": "\u2014", "tEdge": -6, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Southern Miss", "home": "Tulane", "neutral": false, "bookSp": null, "bookTot": null, "mSpread": -15, "mTotal": 50.5, "sEdge": null, "sPlay": null, "sTier": null, "tEdge": null, "tPlay": null, "tTier": null}, {"date": "Sat 9/26", "away": "Oregon", "home": "USC", "neutral": false, "bookSp": 3.5, "bookTot": 61.5, "mSpread": 6.5, "mTotal": 53, "sEdge": -3, "sPlay": "pass", "sTier": "\u2014", "tEdge": -8.5, "tPlay": "UNDER 61.5", "tTier": "\ud83d\udc4d LEAN"}, {"date": "Sat 9/26", "away": "Houston Christian (FCS)", "home": "North Texas", "neutral": false, "bookSp": null, "bookTot": null, "mSpread": -23, "mTotal": 51, "sEdge": null, "sPlay": null, "sTier": null, "tEdge": null, "tPlay": null, "tTier": null}, {"date": "Sat 9/26", "away": "Appalachian State", "home": "NC State", "neutral": false, "bookSp": -13.5, "bookTot": 55.5, "mSpread": -12, "mTotal": 52, "sEdge": -1.5, "sPlay": "pass", "sTier": "\u2014", "tEdge": -3.5, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Troy", "home": "Utah State", "neutral": false, "bookSp": -3, "bookTot": 47.5, "mSpread": 8, "mTotal": 56, "sEdge": -11, "sPlay": "Troy +3.0", "sTier": "\u2705 SOLID", "tEdge": 8.5, "tPlay": "OVER 47.5", "tTier": "\ud83d\udc4d LEAN"}, {"date": "Sat 9/26", "away": "Arizona", "home": "Washington State", "neutral": false, "bookSp": 10.5, "bookTot": 48, "mSpread": 12.5, "mTotal": 52.5, "sEdge": -2, "sPlay": "pass", "sTier": "\u2014", "tEdge": 4.5, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Texas A&M", "home": "LSU", "neutral": false, "bookSp": -8.5, "bookTot": 52, "mSpread": 2.5, "mTotal": 52, "sEdge": -11, "sPlay": "Texas A&M +8.5", "sTier": "\u2705 SOLID", "tEdge": 0, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Missouri", "home": "Mississippi State", "neutral": false, "bookSp": -5.5, "bookTot": 58.5, "mSpread": -1, "mTotal": 55, "sEdge": -4.5, "sPlay": "pass", "sTier": "\u2014", "tEdge": -3.5, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Florida Atlantic", "home": "UL Monroe", "neutral": false, "bookSp": 11.5, "bookTot": 58, "mSpread": 11, "mTotal": 53, "sEdge": 0.5, "sPlay": "pass", "sTier": "\u2014", "tEdge": -5, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Tulsa", "home": "Arkansas", "neutral": false, "bookSp": -7, "bookTot": 50.5, "mSpread": -19, "mTotal": 58, "sEdge": 12, "sPlay": "Arkansas -7.0", "sTier": "\u2705 SOLID", "tEdge": 7.5, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Missouri State", "home": "SMU", "neutral": false, "bookSp": -33, "bookTot": 60, "mSpread": -29, "mTotal": 52, "sEdge": -4, "sPlay": "pass", "sTier": "\u2014", "tEdge": -8, "tPlay": "UNDER 60.0", "tTier": "\ud83d\udc4d LEAN"}, {"date": "Sat 9/26", "away": "Oregon State", "home": "UTEP", "neutral": false, "bookSp": 11, "bookTot": 56, "mSpread": 6.5, "mTotal": 50, "sEdge": 4.5, "sPlay": "pass", "sTier": "\u2014", "tEdge": -6, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "UMass", "home": "Sacramento State", "neutral": false, "bookSp": 4.5, "bookTot": 48.5, "mSpread": -9.5, "mTotal": 52, "sEdge": 14, "sPlay": "Sacramento State +4.5", "sTier": "\ud83d\udd25 STRONG", "tEdge": 3.5, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Rice", "home": "Fresno State", "neutral": false, "bookSp": -13, "bookTot": 43.5, "mSpread": -19.5, "mTotal": 48.5, "sEdge": 6.5, "sPlay": "pass", "sTier": "\u2014", "tEdge": 5, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Georgia Tech", "home": "Stanford", "neutral": false, "bookSp": 3.5, "bookTot": 48.5, "mSpread": 6.5, "mTotal": 48.5, "sEdge": -3, "sPlay": "pass", "sTier": "\u2014", "tEdge": 0, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Air Force", "home": "Nevada", "neutral": false, "bookSp": 5.5, "bookTot": 50.5, "mSpread": 7, "mTotal": 54, "sEdge": -1.5, "sPlay": "pass", "sTier": "\u2014", "tEdge": 3.5, "tPlay": "pass", "tTier": "\u2014"}, {"date": "Sat 9/26", "away": "Minnesota", "home": "Washington", "neutral": false, "bookSp": -10.5, "bookTot": 46, "mSpread": -5.5, "mTotal": 51.5, "sEdge": -5, "sPlay": "pass", "sTier": "\u2014", "tEdge": 5.5, "tPlay": "pass", "tTier": "\u2014"}], "graded": [{"week": "2", "date": "Sat 9/12", "away": "Duke", "home": "Illinois", "neutral": false, "aPts": 31, "hPts": 27, "kind": "Spread", "pick": "Illinois -6.0", "tier": "\ud83d\udc4d LEAN", "res": "L", "units": -0.55}, {"week": "2", "date": "Sat 9/12", "away": "Eastern Michigan", "home": "Michigan State", "neutral": false, "aPts": 7, "hPts": 35, "kind": "Spread", "pick": "Eastern Michigan +17.5", "tier": "\ud83d\udc4d LEAN", "res": "L", "units": -0.55}, {"week": "2", "date": "Sat 9/12", "away": "UNLV", "home": "North Texas", "neutral": false, "aPts": 6, "hPts": 44, "kind": "Spread", "pick": "UNLV -3.0", "tier": "\ud83d\udc4d LEAN", "res": "L", "units": -0.55}, {"week": "2", "date": "Sat 9/12", "away": "Delaware", "home": "Vanderbilt", "neutral": false, "aPts": 26, "hPts": 35, "kind": "Spread", "pick": "Delaware +21.0", "tier": "\ud83d\udc4d LEAN", "res": "W", "units": 0.5}, {"week": "2", "date": "Sat 9/12", "away": "Jacksonville State", "home": "Ohio", "neutral": false, "aPts": 27, "hPts": 29, "kind": "Spread", "pick": "Jacksonville State +2.5", "tier": "\u2705 SOLID", "res": "W", "units": 1}, {"week": "2", "date": "Sat 9/12", "away": "Buffalo", "home": "FIU", "neutral": false, "aPts": 20, "hPts": 33, "kind": "Spread", "pick": "Buffalo +10.0", "tier": "\ud83d\udd25 STRONG", "res": "L", "units": -1.65}, {"week": "2", "date": "Sat 9/12", "away": "West Georgia (FCS)", "home": "Arkansas State", "neutral": false, "aPts": 7, "hPts": 52, "kind": "Spread", "pick": "West Georgia (FCS) +31.5", "tier": "\u2705 SOLID", "res": "L", "units": -1.1}, {"week": "2", "date": "Sat 9/12", "away": "Middle Tennessee", "home": "Marshall", "neutral": false, "aPts": 26, "hPts": 28, "kind": "Spread", "pick": "Middle Tennessee +13.5", "tier": "\ud83d\udc4d LEAN", "res": "W", "units": 0.5}, {"week": "2", "date": "Sat 9/12", "away": "Tulsa", "home": "Sam Houston", "neutral": false, "aPts": 23, "hPts": 17, "kind": "Spread", "pick": "Sam Houston +12.5", "tier": "\ud83d\udc4d LEAN", "res": "W", "units": 0.5}, {"week": "2", "date": "Sat 9/12", "away": "San Diego State", "home": "UCLA", "neutral": false, "aPts": 10, "hPts": 28, "kind": "Spread", "pick": "San Diego State +13.0", "tier": "\u2705 SOLID", "res": "L", "units": -1.1}, {"week": "2", "date": "Sat 9/12", "away": "Louisiana Tech", "home": "LSU", "neutral": false, "aPts": 14, "hPts": 45, "kind": "Spread", "pick": "Louisiana Tech +35.0", "tier": "\ud83d\udd25 STRONG", "res": "W", "units": 1.5}, {"week": "2", "date": "Sat 9/12", "away": "Fordham (FCS)", "home": "Coastal Carolina", "neutral": false, "aPts": 7, "hPts": 45, "kind": "Spread", "pick": "Fordham (FCS) +35.0", "tier": "\ud83d\udc4d LEAN", "res": "L", "units": -0.55}, {"week": "2", "date": "Sat 9/12", "away": "Ohio State", "home": "Texas", "neutral": false, "aPts": 23, "hPts": 24, "kind": "Spread", "pick": "Ohio State +1.5", "tier": "\ud83d\udd25 STRONG", "res": "W", "units": 1.5}, {"week": "2", "date": "Sat 9/12", "away": "Navy", "home": "Florida Atlantic", "neutral": false, "aPts": 30, "hPts": 38, "kind": "Spread", "pick": "Navy -4.5", "tier": "\ud83d\udc4d LEAN", "res": "L", "units": -0.55}, {"week": "2", "date": "Sat 9/12", "away": "Charlotte", "home": "Ole Miss", "neutral": false, "aPts": 9, "hPts": 41, "kind": "Spread", "pick": "Charlotte +45.3", "tier": "\u2705 SOLID", "res": "W", "units": 1}, {"week": "2", "date": "Sat 9/12", "away": "UTSA", "home": "Texas State", "neutral": false, "aPts": 31, "hPts": 26, "kind": "Total", "pick": "UNDER 66.0", "tier": "\ud83d\udc4d LEAN", "res": "W", "units": 0.5}, {"week": "2", "date": "Sat 9/12", "away": "Iowa State", "home": "Iowa", "neutral": false, "aPts": 13, "hPts": 16, "kind": "Total", "pick": "OVER 41.5", "tier": "\ud83d\udc4d LEAN", "res": "L", "units": -0.55}, {"week": "2", "date": "Sat 9/12", "away": "Charlotte", "home": "Ole Miss", "neutral": false, "aPts": 9, "hPts": 41, "kind": "Total", "pick": "UNDER 59.5", "tier": "\ud83d\udc4d LEAN", "res": "W", "units": 0.5}, {"week": "3", "date": "Sat 9/19", "away": "North Carolina", "home": "Clemson", "neutral": false, "aPts": 20, "hPts": 28, "kind": "Spread", "pick": "Clemson -3.3", "tier": "\ud83d\udc4d LEAN", "res": "W", "units": 0.5}, {"week": "3", "date": "Sat 9/19", "away": "Buffalo", "home": "Penn State", "neutral": false, "aPts": 13, "hPts": 55, "kind": "Spread", "pick": "Buffalo +41.0", "tier": "\ud83d\udd25 STRONG", "res": "L", "units": -1.65}, {"week": "3", "date": "Sat 9/19", "away": "Kent State", "home": "Ohio State", "neutral": false, "aPts": 3, "hPts": 59, "kind": "Spread", "pick": "Ohio State -52.5", "tier": "\u2705 SOLID", "res": "W", "units": 1}, {"week": "3", "date": "Sat 9/19", "away": "Maine (FCS)", "home": "Boston College", "neutral": false, "aPts": 16, "hPts": 22, "kind": "Spread", "pick": "Maine (FCS) +38.5", "tier": "\ud83d\udd25 STRONG", "res": "W", "units": 1.5}, {"week": "3", "date": "Sat 9/19", "away": "USC", "home": "Rutgers", "neutral": false, "aPts": 42, "hPts": 35, "kind": "Spread", "pick": "Rutgers +21.5", "tier": "\ud83d\udc4d LEAN", "res": "W", "units": 0.5}, {"week": "3", "date": "Sat 9/19", "away": "Florida State", "home": "Alabama", "neutral": false, "aPts": 36, "hPts": 50, "kind": "Spread", "pick": "Florida State +19.5", "tier": "\ud83d\udc4d LEAN", "res": "W", "units": 0.5}, {"week": "3", "date": "Sat 9/19", "away": "Duquesne (FCS)", "home": "Washington State", "neutral": false, "aPts": 7, "hPts": 48, "kind": "Spread", "pick": "Duquesne (FCS) +38.5", "tier": "\u2705 SOLID", "res": "L", "units": -1.1}, {"week": "3", "date": "Sat 9/19", "away": "Kentucky", "home": "Texas A&M", "neutral": false, "aPts": 31, "hPts": 21, "kind": "Spread", "pick": "Texas A&M -17.0", "tier": "\u2705 SOLID", "res": "L", "units": -1.1}, {"week": "3", "date": "Sat 9/19", "away": "Louisiana Tech", "home": "Baylor", "neutral": false, "aPts": 19, "hPts": 36, "kind": "Spread", "pick": "Louisiana Tech +19.5", "tier": "\ud83d\udd25 STRONG", "res": "W", "units": 1.5}, {"week": "3", "date": "Sat 9/19", "away": "Charlotte", "home": "Appalachian State", "neutral": false, "aPts": 21, "hPts": 26, "kind": "Spread", "pick": "Charlotte +17.5", "tier": "\ud83d\udc4d LEAN", "res": "W", "units": 0.5}, {"week": "3", "date": "Sat 9/19", "away": "East Carolina", "home": "Old Dominion", "neutral": false, "aPts": 20, "hPts": 17, "kind": "Spread", "pick": "Old Dominion -3.0", "tier": "\ud83d\udc4d LEAN", "res": "L", "units": -0.55}, {"week": "3", "date": "Sat 9/19", "away": "Murray State (FCS)", "home": "Oklahoma State", "neutral": false, "aPts": 0, "hPts": 59, "kind": "Spread", "pick": "Murray State (FCS) +55.5", "tier": "\u2705 SOLID", "res": "L", "units": -1.1}, {"week": "3", "date": "Sat 9/19", "away": "Western Michigan", "home": "Rice", "neutral": false, "aPts": 28, "hPts": 21, "kind": "Spread", "pick": "Rice +9.0", "tier": "\u2705 SOLID", "res": "W", "units": 1}, {"week": "3", "date": "Sat 9/19", "away": "North Dakota State", "home": "Sacramento State", "neutral": false, "aPts": 31, "hPts": 10, "kind": "Spread", "pick": "Sacramento State +27.5", "tier": "\u2705 SOLID", "res": "W", "units": 1}, {"week": "3", "date": "Sat 9/19", "away": "Wyoming", "home": "Central Michigan", "neutral": false, "aPts": 10, "hPts": 24, "kind": "Total", "pick": "OVER 38.5", "tier": "\u2705 SOLID", "res": "L", "units": -1.1}, {"week": "3", "date": "Sat 9/19", "away": "FIU", "home": "Florida Atlantic", "neutral": false, "aPts": 10, "hPts": 16, "kind": "Total", "pick": "UNDER 62.5", "tier": "\ud83d\udc4d LEAN", "res": "W", "units": 0.5}, {"week": "3", "date": "Sat 9/19", "away": "Murray State (FCS)", "home": "Oklahoma State", "neutral": false, "aPts": 0, "hPts": 59, "kind": "Total", "pick": "UNDER 70.5", "tier": "\ud83d\udd25 STRONG", "res": "W", "units": 1.5}], "week": "4", "accuracy": {"n": 106, "modelMAE": 11.51, "bookMAE": 10.16, "modelWins": 45}, "moves": [{"team": "Oklahoma", "from": 18.3, "to": 15.3, "adj": -3.0}, {"team": "Notre Dame", "from": 24.1, "to": 21.1, "adj": -3.0}, {"team": "Texas A&M", "from": 21.0, "to": 18.0, "adj": -3.0}, {"team": "Missouri", "from": 13.3, "to": 10.3, "adj": -3.0}, {"team": "South Carolina", "from": 8.3, "to": 5.3, "adj": -3.0}, {"team": "Penn State", "from": 8.7, "to": 11.7, "adj": 3.0}, {"team": "Mississippi State", "from": 5.9, "to": 8.9, "adj": 3.0}, {"team": "Oklahoma State", "from": 3.6, "to": 6.6, "adj": 3.0}, {"team": "Virginia", "from": -1.2, "to": -4.2, "adj": -3.0}, {"team": "West Virginia", "from": -2.2, "to": 0.8, "adj": 3.0}, {"team": "Wisconsin", "from": -2.5, "to": 0.5, "adj": 3.0}, {"team": "San Diego State", "from": -5.8, "to": -8.8, "adj": -3.0}, {"team": "Kentucky", "from": -6.0, "to": -3.0, "adj": 3.0}, {"team": "Old Dominion", "from": -5.5, "to": -8.5, "adj": -3.0}, {"team": "Louisiana Tech", "from": -6.6, "to": -9.6, "adj": -3.0}, {"team": "Iowa State", "from": -1.1, "to": 1.9, "adj": 3.0}, {"team": "Northwestern", "from": -4.2, "to": -1.2, "adj": 3.0}, {"team": "Duke", "from": -1.5, "to": 1.5, "adj": 3.0}, {"team": "Baylor", "from": -5.8, "to": -2.8, "adj": 3.0}, {"team": "New Mexico", "from": -3.4, "to": -0.4, "adj": 3.0}, {"team": "Troy", "from": -7.2, "to": -4.2, "adj": 3.0}, {"team": "Michigan State", "from": -4.4, "to": -1.4, "adj": 3.0}, {"team": "Colorado", "from": -9.0, "to": -12.0, "adj": -3.0}, {"team": "James Madison", "from": -9.5, "to": -6.5, "adj": 3.0}, {"team": "Buffalo", "from": -13.3, "to": -16.3, "adj": -3.0}, {"team": "Boston College", "from": -11.3, "to": -14.3, "adj": -3.0}, {"team": "Stanford", "from": -11.4, "to": -14.4, "adj": -3.0}, {"team": "Eastern Michigan", "from": -16.1, "to": -19.1, "adj": -3.0}, {"team": "Liberty", "from": -13.9, "to": -10.9, "adj": 3.0}, {"team": "Washington State", "from": -15.6, "to": -12.6, "adj": 3.0}, {"team": "Wyoming", "from": -14.8, "to": -17.8, "adj": -3.0}, {"team": "East Carolina", "from": -16.3, "to": -13.3, "adj": 3.0}, {"team": "UConn", "from": -17.6, "to": -14.6, "adj": 3.0}, {"team": "Southern Miss", "from": -19.2, "to": -22.2, "adj": -3.0}, {"team": "Central Michigan", "from": -17.7, "to": -14.7, "adj": 3.0}, {"team": "Bowling Green", "from": -22.2, "to": -25.2, "adj": -3.0}, {"team": "Ball State", "from": -20.1, "to": -23.1, "adj": -3.0}, {"team": "Sam Houston", "from": -24.2, "to": -21.2, "adj": 3.0}, {"team": "Maine (FCS)", "from": -31.5, "to": -28.5, "adj": 3.0}, {"team": "Nicholls (FCS)", "from": -37.2, "to": -40.2, "adj": -3.0}, {"team": "Murray State (FCS)", "from": -38.2, "to": -41.2, "adj": -3.0}, {"team": "Duquesne (FCS)", "from": -40.5, "to": -43.5, "adj": -3.0}, {"team": "Kansas State", "from": 7.3, "to": 4.4, "adj": -2.9}, {"team": "Tulane", "from": -12.7, "to": -9.8, "adj": 2.9}, {"team": "LSU", "from": 15.7, "to": 12.9, "adj": -2.8}, {"team": "Ole Miss", "from": 10.0, "to": 12.8, "adj": 2.8}, {"team": "Texas", "from": 25.8, "to": 23.1, "adj": -2.7}, {"team": "UTSA", "from": -6.4, "to": -3.7, "adj": 2.7}, {"team": "Rice", "from": -17.3, "to": -19.7, "adj": -2.4}, {"team": "Western Michigan", "from": -17.4, "to": -15.0, "adj": 2.4}, {"team": "SMU", "from": 5.5, "to": 3.3, "adj": -2.2}, {"team": "Louisville", "from": 4.2, "to": 6.4, "adj": 2.2}, {"team": "UL Monroe", "from": -25.8, "to": -28.0, "adj": -2.2}, {"team": "Southeastern Louisiana (FCS)", "from": -29.1, "to": -26.9, "adj": 2.2}, {"team": "Ohio State", "from": 35.1, "to": 33.0, "adj": -2.1}, {"team": "Kent State", "from": -26.6, "to": -24.5, "adj": 2.1}, {"team": "Louisiana", "from": -9.8, "to": -11.8, "adj": -2.0}, {"team": "UAB", "from": -22.5, "to": -20.5, "adj": 2.0}, {"team": "Michigan", "from": 15.9, "to": 14.1, "adj": -1.8}, {"team": "Minnesota", "from": 0.8, "to": 2.6, "adj": 1.8}, {"team": "Akron", "from": -23.6, "to": -25.4, "adj": -1.8}, {"team": "UTEP", "from": -23.8, "to": -22.0, "adj": 1.8}, {"team": "Utah", "from": 10.8, "to": 12.5, "adj": 1.7}, {"team": "TCU", "from": 0.8, "to": 2.5, "adj": 1.7}, {"team": "UCLA", "from": -0.6, "to": 1.1, "adj": 1.7}, {"team": "Purdue", "from": -5.2, "to": -6.9, "adj": -1.7}, {"team": "Cincinnati", "from": -5.5, "to": -7.2, "adj": -1.7}, {"team": "Miami (OH)", "from": -13.7, "to": -12.0, "adj": 1.7}, {"team": "Utah State", "from": -12.9, "to": -14.6, "adj": -1.7}, {"team": "Arkansas State", "from": -14.0, "to": -15.7, "adj": -1.7}, {"team": "Georgia", "from": 25.0, "to": 26.6, "adj": 1.6}, {"team": "Virginia Tech", "from": 10.1, "to": 11.7, "adj": 1.6}, {"team": "Arkansas", "from": 0.9, "to": -0.7, "adj": -1.6}, {"team": "Maryland", "from": 5.0, "to": 3.4, "adj": -1.6}, {"team": "Texas State", "from": -12.2, "to": -10.6, "adj": 1.6}, {"team": "North Texas", "from": -17.4, "to": -19.0, "adj": -1.6}, {"team": "Arizona State", "from": 0.2, "to": 1.6, "adj": 1.4}, {"team": "Kansas", "from": -1.1, "to": -2.5, "adj": -1.4}, {"team": "North Dakota State", "from": -1.9, "to": -0.5, "adj": 1.4}, {"team": "Sacramento State", "from": -19.8, "to": -21.2, "adj": -1.4}, {"team": "BYU", "from": 11.9, "to": 10.6, "adj": -1.3}, {"team": "Colorado State", "from": -13.7, "to": -12.4, "adj": 1.3}, {"team": "USC", "from": 16.5, "to": 15.3, "adj": -1.2}, {"team": "Clemson", "from": 2.2, "to": 1.0, "adj": -1.2}, {"team": "Rutgers", "from": 2.3, "to": 3.5, "adj": 1.2}, {"team": "North Carolina", "from": -8.3, "to": -7.1, "adj": 1.2}, {"team": "Delaware", "from": -10.4, "to": -11.4, "adj": -1.0}, {"team": "Appalachian State", "from": -12.8, "to": -13.8, "adj": -1.0}, {"team": "Charlotte", "from": -19.5, "to": -18.5, "adj": 1.0}, {"team": "Coastal Carolina", "from": -19.9, "to": -18.9, "adj": 1.0}, {"team": "Middle Tennessee", "from": -16.3, "to": -15.4, "adj": 0.9}, {"team": "Nevada", "from": -17.3, "to": -18.2, "adj": -0.9}, {"team": "Alabama", "from": 17.7, "to": 18.5, "adj": 0.8}, {"team": "Florida State", "from": 9.5, "to": 8.7, "adj": -0.8}, {"team": "Arizona", "from": 2.9, "to": 2.2, "adj": -0.7}, {"team": "Northern Illinois", "from": -22.4, "to": -21.7, "adj": 0.7}, {"team": "Fresno State", "from": -3.3, "to": -2.7, "adj": 0.6}, {"team": "Florida Atlantic", "from": -15.0, "to": -14.4, "adj": 0.6}, {"team": "FIU", "from": -16.2, "to": -16.8, "adj": -0.6}, {"team": "San Jose State", "from": -19.3, "to": -19.9, "adj": -0.6}, {"team": "UCF", "from": 0.3, "to": 0.7, "adj": 0.4}, {"team": "Jacksonville State", "from": -11.6, "to": -11.2, "adj": 0.4}, {"team": "Georgia Southern", "from": -11.5, "to": -11.9, "adj": -0.4}, {"team": "Georgia State", "from": -9.4, "to": -9.8, "adj": -0.4}, {"team": "Marshall", "from": -16.0, "to": -15.6, "adj": 0.4}, {"team": "Missouri State", "from": -23.0, "to": -23.4, "adj": -0.4}, {"team": "Indiana", "from": 24.1, "to": 23.8, "adj": -0.3}, {"team": "Tennessee", "from": 15.5, "to": 15.8, "adj": 0.3}, {"team": "Western Kentucky", "from": -12.7, "to": -12.4, "adj": 0.3}, {"team": "Kennesaw State", "from": -13.7, "to": -14.0, "adj": -0.3}, {"team": "Florida", "from": 9.5, "to": 9.7, "adj": 0.2}, {"team": "Auburn", "from": 2.7, "to": 2.5, "adj": -0.2}, {"team": "Vanderbilt", "from": -2.3, "to": -2.5, "adj": -0.2}, {"team": "NC State", "from": -4.7, "to": -4.5, "adj": 0.2}, {"team": "Temple", "from": -13.6, "to": -13.8, "adj": -0.2}, {"team": "Toledo", "from": -16.0, "to": -15.8, "adj": 0.2}, {"team": "South Alabama", "from": -15.7, "to": -15.6, "adj": 0.1}, {"team": "Ohio", "from": -17.9, "to": -18.0, "adj": -0.1}], "calib": {"n": 54, "slope": 0.945, "bias": 0.74, "bigN": 8, "bigShort": 2.0, "closeShort": -0.8}};
+
+const pct = v => (typeof v === "number") ? (v*100).toFixed(1)+"%" : "—";
+const pc0 = v => (typeof v === "number") ? Math.round(v*100)+"%" : "—";
+const sgn = v => (typeof v === "number") ? (v>0?"+":"")+v.toFixed(1) : "—";
+const num = (v,d=1) => (typeof v === "number") ? v.toFixed(d) : "—";
+const esc = s => String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* Conferences carry the colour here — there are 130+ schools, so per-team
+   colours would be noise. Power ratings drive the bars instead. */
+const CONF = {
+  "SEC":"#F0B429","Big Ten":"#4AA8B8","Big 12":"#D2434A","ACC":"#2B5CC4",
+  "Pac-12":"#1FA08F","American":"#8B5FD6","Mountain West":"#E8622A",
+  "Sun Belt":"#69BE28","MAC":"#17A6E8","Conference USA":"#C4384A",
+  "Independent":"#9BA6AE","FBS Independents":"#9BA6AE",
+};
+const cclr = c => {
+  const k = String(c||"");
+  if (CONF[k]) return CONF[k];
+  if (/FCS/i.test(k)) return "#5E6E7A";
+  return "#8494A1";
+};
+const TI = D.teams || {};
+const conf = t => (TI[t]||{}).conf || "";
+const clr  = t => cclr(conf(t));
+const rtg  = t => (TI[t]||{}).power;
+const chip = t => `<span class="tchip" style="background:${clr(t)}"></span>`;
+const matchup = (a,h,n) => `<div class="mu">${chip(a)}<span class="team">${esc(a)}</span>`
+  + `<span class="at">${n?"vs":"@"}</span>${chip(h)}<span class="team">${esc(h)}</span></div>`
+  + `<div class="sub">${esc(conf(a))} · ${esc(conf(h))}${n?" · neutral site":""}</div>`;
+
+const TIER = s => { const u = String(s||"").toUpperCase();
+  return u.includes("STRONG") ? "STRONG" : u.includes("SOLID") ? "SOLID" : u.includes("LEAN") ? "LEAN" : null; };
+
+/* every flagged play on the slate, spread and total alike */
+const plays = [];
+(D.games||[]).forEach(g => {
+  if (TIER(g.sTier) && g.sPlay && g.sPlay !== "pass")
+    plays.push({g, kind:"Spread", bet:g.sPlay, edge:g.sEdge, tier:g.sTier,
+                book:g.bookSp, model:g.mSpread});
+  if (TIER(g.tTier) && g.tPlay && g.tPlay !== "pass")
+    plays.push({g, kind:"Total", bet:g.tPlay, edge:g.tEdge, tier:g.tTier,
+                book:g.bookTot, model:g.mTotal});
+});
+plays.sort((a,b) => Math.abs(b.edge||0) - Math.abs(a.edge||0));
+
+/* The card is capped. A 60-game Saturday can flag 18 plays, which is not a
+   card, it is a list — and betting all of it just buys the model's average,
+   which is currently worse than the closing line. Top 5 by edge; the rest stay
+   visible below so the whole model is still on the page, they are simply not
+   the recommendation. */
+const CARD_MAX = 5;
+const card  = plays.slice(0, CARD_MAX);
+const bench = plays.slice(CARD_MAX);
+
+document.getElementById("stamp").innerHTML =
+  `<b>Week ${esc(D.week ?? "—")}</b>${esc(D.generated)}`;
+
+const SEC = {};
+const sec = (id,title,count,blurb,body) => {
+  SEC[id] = `<section id="${id}"><h2>${title}${count?`<span class="n">${count}</span>`:""}</h2>`
+    + (blurb?`<p class="blurb">${blurb}</p>`:"") + body + `</section>`;
+};
+
+const slip = p => `<article class="slip">
+  <div class="tbar"><i style="background:${clr(p.g.away)}"></i><i style="background:${clr(p.g.home)}"></i></div>
+  <div class="top">
+    <div><div class="matchup">${esc(p.g.away)} ${p.g.neutral?"vs":"@"} ${esc(p.g.home)}</div>
+      <div class="matchup" style="color:var(--faint)">${esc(p.g.date)}${p.g.neutral?" · neutral":""}</div></div>
+    <span class="kind">${p.kind}</span>
+  </div>
+  <div class="bet">${esc(p.bet)}</div>
+  <div class="foot">
+    <div class="stat"><span class="k">Edge</span><span class="v">${sgn(Math.abs(p.edge))}</span></div>
+    <div class="stat"><span class="k">Model</span><span class="v sm">${num(p.model)}
+      <span style="color:var(--faint);font-size:11px">vs ${num(p.book)}</span></span></div>
+    <div class="stat"><span class="k">Tier</span><span class="v sm">${esc(p.tier)}</span></div>
+  </div>
+</article>`;
+
+/* ================= THE CARD ================= */
+sec("card","The Card", card.length?`${card.length} of ${plays.length}`:"",
+  `The ${CARD_MAX} biggest disagreements with the book, spreads and totals together. `
+  + `Everything else the model flagged is listed underneath — visible, but not the play.`,
+  card.length ? `<div class="plays">${card.map(slip).join("")}</div>`
+    + (bench.length ? `<h2 style="font-size:19px;margin-top:30px">Also Flagged`
+        + `<span class="n">${bench.length} not on the card</span></h2>`
+        + `<p class="blurb">Past the top ${CARD_MAX} by edge. Shown so nothing is hidden.</p>`
+        + `<div class="scroll"><table class="stack"><thead><tr>
+             <th>Matchup</th><th>Kind</th><th>Play</th>
+             <th class="num">Edge</th><th>Tier</th></tr></thead><tbody>`
+        + bench.map(p => `<tr>
+             <td data-l="Game">${matchup(p.g.away,p.g.home,p.g.neutral)}</td>
+             <td data-l="Kind"><span class="pos">${p.kind}</span></td>
+             <td data-l="Play">${esc(p.bet)}</td>
+             <td data-l="Edge" class="num goldtx">${sgn(Math.abs(p.edge))}</td>
+             <td data-l="Tier"><span class="tag pass">${esc(p.tier)}</span></td>
+           </tr>`).join("")
+        + `</tbody></table></div>` : "")
+  : `<div class="empty">No lines on the slate yet. Book numbers arrive with the Saturday morning run.</div>`);
+
+/* ================= EVERY GAME ================= */
+const mxE = Math.max(...(D.games||[]).map(g => Math.abs(g.sEdge||0)), 1);
+sec("games","Every Game", `${(D.games||[]).length} on the slate`,
+  "The model's number against the book's. Gold means the model has the home side lower than the book, teal higher.",
+  (D.games||[]).length ? `<div class="scroll"><table class="stack"><thead><tr>
+    <th>Date</th><th>Matchup</th><th class="num">Model</th><th class="num">Book</th>
+    <th>Spread edge</th><th class="num">Model total</th><th class="num">Book total</th><th>Call</th>
+  </tr></thead><tbody>` + D.games.map(g => {
+    const e = g.sEdge||0, w = Math.min(50, Math.abs(e)/mxE*50);
+    const call = [TIER(g.sTier)?`<span class="tag play">${esc(g.sPlay)}</span>`:"",
+                  TIER(g.tTier)?`<span class="tag play">${esc(g.tPlay)}</span>`:""].filter(Boolean).join(" ");
+    return `<tr>
+      <td data-l="" class="sub">${esc(g.date)}</td>
+      <td data-l="">${matchup(g.away,g.home,g.neutral)}</td>
+      <td data-l="Model" class="num">${num(g.mSpread)}</td>
+      <td data-l="Book" class="num">${num(g.bookSp)}</td>
+      <td data-l="Spread edge"><div class="div" role="img" aria-label="edge ${sgn(e)}">
+        <i class="${e>=0?"p":"n"}" style="width:${w}%"></i></div><span class="sub">${sgn(e)}</span></td>
+      <td data-l="Model total" class="num">${num(g.mTotal)}</td>
+      <td data-l="Book total" class="num">${num(g.bookTot)} <span class="sub">${sgn(g.tEdge)}</span></td>
+      <td data-l="Call">${call || `<span class="tag pass">—</span>`}</td>
+    </tr>`;
+  }).join("") + `</tbody></table></div>`
+  : `<div class="empty">No games on the slate.</div>`);
+
+/* ================= TRACKER ================= */
+const G = D.graded || [];
+const tally = rows => rows.reduce((a,x) => {
+  if (x.res==="W") a.w++; else if (x.res==="L") a.l++; else a.p++;
+  if (typeof x.units === "number") a.u += x.units;
+  return a;
+}, {w:0,l:0,p:0,u:0});
+const rate = t => (t.w+t.l) ? pct(t.w/(t.w+t.l)) : "—";
+const ats = tally(G.filter(x => x.kind==="Spread"));
+const ou  = tally(G.filter(x => x.kind==="Total"));
+const all = tally(G);
+const RES = r => `<span class="res ${r==="W"?"good":r==="L"?"bad":""}" style="${r==="P"?"color:var(--dim)":""}">${r}</span>`;
+const tiers = [...new Set(G.map(x => x.tier))].filter(Boolean);
+
+sec("record","Report Card", G.length?`${G.length} graded`:"",
+  "Every flagged play scored against the final. Scores load themselves from the schedule feed — nothing here is typed in. Units follow your Settings tab: 1.5 on STRONG, 1.0 on SOLID, 0.5 on LEAN, bet to win, so a loss at −110 costs 1.1× the target.",
+  G.length ? `
+  <div class="tiles">
+    <div class="tile"><span class="k">Against the spread</span><span class="v">${ats.w}–${ats.l}${ats.p?"–"+ats.p:""}</span></div>
+    <div class="tile"><span class="k">Totals</span><span class="v">${ou.w}–${ou.l}${ou.p?"–"+ou.p:""}</span></div>
+    <div class="tile"><span class="k">Units</span><span class="v ${all.u>0.01?"up":all.u<-0.01?"down":""}">${sgn(all.u)}</span></div>
+    <div class="tile"><span class="k">Win rate</span><span class="v">${rate(all)}</span></div>
+  </div>
+  ${tiers.length>1 ? `<div class="scroll" style="margin-bottom:12px"><table><thead><tr>
+    <th>Tier</th><th class="num">W</th><th class="num">L</th><th class="num">P</th>
+    <th class="num">Win rate</th><th class="num">Units</th></tr></thead><tbody>` +
+    tiers.map(t => { const x = tally(G.filter(g => g.tier === t));
+      return `<tr><td><span class="team">${esc(t)}</span></td>
+        <td class="num">${x.w}</td><td class="num">${x.l}</td><td class="num">${x.p}</td>
+        <td class="num">${rate(x)}</td>
+        <td class="num ${x.u>0.01?"good":x.u<-0.01?"bad":""}">${sgn(x.u)}</td></tr>`;
+    }).join("") + `</tbody></table></div>` : ""}
+  <div class="scroll"><table class="stack"><thead><tr>
+    <th class="num">Wk</th><th>Matchup</th><th class="num">Final</th><th>Pick</th>
+    <th>Tier</th><th>Result</th><th class="num">Units</th></tr></thead><tbody>` +
+  G.slice().reverse().map(x => `<tr>
+    <td data-l="Week" class="num sub">${esc(x.week)}</td>
+    <td data-l="">${matchup(x.away,x.home,x.neutral)}</td>
+    <td data-l="Final" class="num">${x.aPts}–${x.hPts}</td>
+    <td data-l="Pick"><span class="team">${esc(x.pick)}</span> <span class="pos">${esc(x.kind)}</span></td>
+    <td data-l="Tier" class="sub">${esc(x.tier)}</td>
+    <td data-l="Result">${RES(x.res)}</td>
+    <td data-l="Units" class="num ${(x.units||0)>0.01?"good":(x.units||0)<-0.01?"bad":""}">${sgn(x.units)}</td>
+  </tr>`).join("") + `</tbody></table></div>`
+  : `<div class="empty">Nothing graded yet. Results load themselves once games finish.</div>`);
+
+/* ================= MODEL VS MARKET ================= */
+const A = D.accuracy;
+sec("accuracy","Model vs the Market", A?`${A.n} games`:"",
+  "Whose number landed closer to the final margin. The least flattering chart here and the most useful — if the market is consistently closer, the edges aren't real.",
+  A ? `<div class="tiles">
+    <div class="tile"><span class="k">Model miss</span><span class="v ${A.modelMAE<A.bookMAE?"up":""}">${num(A.modelMAE)}</span></div>
+    <div class="tile"><span class="k">Market miss</span><span class="v ${A.bookMAE<A.modelMAE?"up":""}">${num(A.bookMAE)}</span></div>
+    <div class="tile"><span class="k">Model closer</span><span class="v">${A.modelWins}<span style="font-size:15px;color:var(--faint)"> / ${A.n}</span></span></div>
+  </div>
+  <p class="blurb">Average points off the final margin, lower is better. ${
+    A.modelMAE < A.bookMAE ? "The model is beating the closing number — rare, and worth trusting carefully."
+    : "The market is closer. Treat the reported edges with suspicion until this flips."}</p>`
+  : `<div class="empty">No graded games with both a model and a book number yet.</div>`);
+
+/* ================= RATING MOVES ================= */
+const MV = D.moves || [];
+sec("moves","Rating Moves", MV.length?`${MV.length} changed`:"",
+  "Ratings correct themselves every week by a quarter of each miss, capped at three points a game — the rule that used to live on the Rating Updater tab and needed doing by hand.",
+  MV.length ? `<div class="scroll"><table class="stack"><thead><tr>
+    <th>Team</th><th>Conference</th><th class="num">Was</th><th class="num">Now</th><th class="num">Move</th>
+  </tr></thead><tbody>` + MV.map(m => `<tr>
+    <td data-l=""><div class="mu">${chip(m.team)}<span class="team">${esc(m.team)}</span></div></td>
+    <td data-l="Conference" class="sub">${esc(conf(m.team))}</td>
+    <td data-l="Was" class="num">${sgn(m.from)}</td>
+    <td data-l="Now" class="num">${sgn(m.to)}</td>
+    <td data-l="Move" class="num ${m.adj>0?"good":m.adj<0?"bad":""}">${sgn(m.adj)}</td>
+  </tr>`).join("") + `</tbody></table></div>`
+  : `<div class="empty">No rating changes on the last run.</div>`);
+
+/* ================= POWER RATINGS ================= */
+const RANK = Object.entries(TI)
+  .filter(([,v]) => typeof v.power === "number" && !/FCS/i.test(v.conf||""))
+  .sort((a,b) => b[1].power - a[1].power);
+const mxP = Math.max(...RANK.map(([,v]) => Math.abs(v.power)), 1);
+sec("power","Power Ratings", `${RANK.length} FBS teams`,
+  "Points against an average FBS team on a neutral field. FCS opponents are rated too but left out of this list.",
+  `<div class="scroll"><table class="stack"><thead><tr>
+    <th class="num">#</th><th>Team</th><th>Conference</th><th class="num">Rating</th>
+    <th style="width:26%">vs average</th><th class="num">Total lean</th>
+  </tr></thead><tbody>` + RANK.map(([t,v],i) => {
+    const w = Math.min(48, Math.abs(v.power)/mxP*48);
+    return `<tr>
+      <td data-l="Rank" class="num sub">${i+1}</td>
+      <td data-l=""><div class="mu">${chip(t)}<span class="team">${esc(t)}</span></div></td>
+      <td data-l="Conference" class="sub">${esc(v.conf)}</td>
+      <td data-l="Rating" class="num ${v.power>=0?"goldtx":""}">${sgn(v.power)}</td>
+      <td data-l="vs average"><div class="div" role="img" aria-label="${sgn(v.power)}">
+        <i class="${v.power>=0?"p":"n"}" style="width:${w}%"></i></div></td>
+      <td data-l="Total lean" class="num">${sgn(v.lean)}</td>
+    </tr>`;
+  }).join("") + `</tbody></table></div>`);
+
+/* ================= CONFERENCES ================= */
+const byConf = {};
+RANK.forEach(([t,v]) => { (byConf[v.conf] = byConf[v.conf] || []).push(v.power); });
+const confRows = Object.entries(byConf)
+  .map(([c,xs]) => ({conf:c, n:xs.length, avg:xs.reduce((a,b)=>a+b,0)/xs.length, top:Math.max(...xs)}))
+  .sort((a,b) => b.avg - a.avg);
+sec("conf","Conferences", `${confRows.length}`,
+  "Average power rating by league — how much of an edge a conference badge is actually worth.",
+  `<div class="scroll"><table class="stack"><thead><tr>
+    <th>Conference</th><th class="num">Teams</th><th class="num">Average</th><th class="num">Best</th>
+  </tr></thead><tbody>` + confRows.map(c => `<tr>
+    <td data-l=""><div class="mu"><span class="tchip" style="background:${cclr(c.conf)}"></span>
+      <span class="team">${esc(c.conf)}</span></div></td>
+    <td data-l="Teams" class="num">${c.n}</td>
+    <td data-l="Average" class="num ${c.avg>=0?"goldtx":""}">${sgn(c.avg)}</td>
+    <td data-l="Best" class="num">${sgn(c.top)}</td>
+  </tr>`).join("") + `</tbody></table></div>`);
+
+/* ================= HOME ================= */
+const top3 = card.slice(0,3);
+const homeHTML = `
+  <div class="hero">
+    <div class="eyebrow">Week ${esc(D.week ?? "—")}${D.games && D.games.length ? " · " + esc(D.games[0].date) : ""}</div>
+    <h1>${plays.length ? plays.length + (plays.length===1?" play":" plays") + " on the card" : "No plays yet"}</h1>
+    <p class="sub">${plays.length
+      ? `${(D.games||[]).length} games priced across ${confRows.length} conferences. Biggest edge is ${esc(top3[0].bet)} at ${sgn(Math.abs(top3[0].edge))}.`
+      : `${(D.games||[]).length} games on the slate. Book numbers arrive with the Saturday run.`}</p>
+  </div>
+
+  ${(() => {
+    const C = D.calib;
+    if (!C || Math.abs(1 - C.slope) < 0.08) return "";
+    const tight = C.slope < 1;
+    return `<div class="note" style="border-left-color:var(--warn)">
+      <b>Read the card with care this week.</b> Against ${C.n} market lines the model prices at
+      <b>${(C.slope*100).toFixed(0)}%</b> of the market's scale${
+        C.bigShort !== null ? `, and on the ${C.bigN} games laid at 20 or more it is
+        <b>${Math.abs(C.bigShort)} points ${C.bigShort>0?"short of":"past"}</b> the book` : ""}${
+        C.closeShort !== null ? ` while sitting within ${Math.abs(C.closeShort)} of it inside ten points` : ""}.
+      Ratings fitted to close games do not stretch to blowouts, so the big edges below are mostly
+      that gap rather than value — they will nearly all sit on ${tight?"the underdog":"the favourite"}.
+      The plays worth a second look are the ones on games priced inside two touchdowns.</div>`;
+  })()}
+
+  <h2>Model record<span class="n">${esc(D.season ?? "")}</span></h2>
+  <div class="rec3">
+    <div><span class="k">Against the spread</span><span class="v">${ats.w}–${ats.l}${ats.p?"–"+ats.p:""}</span>
+      <span class="p">${(ats.w+ats.l)?pc0(ats.w/(ats.w+ats.l)):"—"}</span><span class="n">Flagged plays</span></div>
+    <div><span class="k">Totals</span><span class="v">${ou.w}–${ou.l}${ou.p?"–"+ou.p:""}</span>
+      <span class="p">${(ou.w+ou.l)?pc0(ou.w/(ou.w+ou.l)):"—"}</span><span class="n">Over / under</span></div>
+    <div><span class="k">Units</span><span class="v ${all.u>0.01?"up":all.u<-0.01?"down":""}">${sgn(all.u)}</span>
+      <span class="p">${G.length} graded</span><span class="n">Bet to win</span></div>
+  </div>
+  <p class="foot-note">Only plays that cleared a tier count. Everything else the model prices but passes on.</p>
+
+  ${top3.length ? `<h2>Top of the card<span class="n">biggest edges</span></h2>
+    <div class="plays">${top3.map(slip).join("")}</div>` : ""}
+`;
+
+/* ================= tabs ================= */
+const ICON = {
+  home:'<svg viewBox="0 0 24 24"><path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>',
+  games:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>',
+  bets:'<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  tracker:'<svg viewBox="0 0 24 24"><path d="M3 16.5 8.5 11l4 4L21 6.5"/><path d="M15 6.5h6v6"/></svg>',
+  explore:'<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
+};
+const MI = {
+  bars:'<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  shield:'<svg viewBox="0 0 24 24"><path d="M12 3 20 6v6c0 5-3.4 8-8 9-4.6-1-8-4-8-9V6z"/></svg>',
+  move:'<svg viewBox="0 0 24 24"><path d="M4 17 9.5 11l4 4L20 7"/><path d="M14 7h6v6"/></svg>',
+};
+const TABS = [
+  {id:"home",    label:"Home",      secs:[]},
+  {id:"games",   label:"Games",     secs:["games"]},
+  {id:"bets",    label:"Best Bets", secs:["card"]},
+  {id:"tracker", label:"Tracker",   secs:["record","accuracy"]},
+  {id:"explore", label:"Explore",   secs:[]},
+];
+const MENU = [
+  {id:"power",  icon:"bars",   title:"Power Ratings", desc:"All FBS teams against a neutral opponent"},
+  {id:"conf",   icon:"shield", title:"Conferences",   desc:"What a league badge is actually worth"},
+  {id:"moves",  icon:"move",   title:"Rating Moves",  desc:"How the ratings corrected themselves"},
+].filter(m => SEC[m.id]);
+
+const PARENT = {};
+MENU.forEach(m => PARENT[m.id] = "explore");
+
+document.getElementById("v-home").innerHTML = homeHTML;
+TABS.forEach(t => {
+  if (!t.secs.length) return;
+  document.getElementById("v-"+t.id).innerHTML =
+    t.secs.filter(id => SEC[id]).map(id => SEC[id]).join("");
+});
+document.getElementById("v-explore").innerHTML =
+  `<h2>Explore<span class="n">${MENU.length} boards</span></h2><div class="grid2">` +
+  MENU.map(m => `<button class="mcard" data-go="${m.id}">${MI[m.icon]}<b>${m.title}</b><span>${m.desc}</span></button>`).join("") +
+  `</div>`;
+
+const main = document.querySelector("main");
+MENU.forEach(m => {
+  const d = document.createElement("div");
+  d.className = "view"; d.id = "v-"+m.id; d.setAttribute("role","tabpanel");
+  d.innerHTML = `<button class="back" data-go="explore">← Explore</button>` + SEC[m.id];
+  main.appendChild(d);
+});
+
+document.getElementById("tabs").innerHTML = TABS.map(t =>
+  `<button id="t-${t.id}" role="tab" data-v="${t.id}" aria-selected="false"
+     aria-controls="v-${t.id}">${ICON[t.id]}<span>${t.label}</span></button>`).join("");
+
+const ALL = TABS.map(t => t.id).concat(MENU.map(m => m.id));
+function show(id, push){
+  if (!ALL.includes(id)) id = "home";
+  ALL.forEach(v => document.getElementById("v-"+v).classList.toggle("on", v === id));
+  const tab = PARENT[id] || id;
+  TABS.forEach(t => document.getElementById("t-"+t.id).setAttribute("aria-selected", String(t.id === tab)));
+  if (push && location.hash !== "#"+id) history.replaceState(null,"","#"+id);
+  window.scrollTo({top:0, behavior:"instant"});
+}
+document.getElementById("tabs").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (b) show(b.dataset.v, true);
+});
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-go]"); if (b) show(b.dataset.go, true);
+});
+window.addEventListener("hashchange", () => show(location.hash.slice(1), false));
+show(location.hash.slice(1) || "home", false);
+</script>
+
