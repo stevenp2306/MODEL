@@ -1,7 +1,7 @@
 {
  "name": "NFL Model",
  "short_name": "NFL Model",
- "start_url": "index.html",
+ "start_url": ".",
  "display": "standalone",
  "background_color": "#080c14",
  "theme_color": "#0b3d2c",
@@ -18,7 +18,5 @@
    "sizes": "192x192",
    "type": "image/png"
   }
- ],
- "id": "index.html",
- "scope": "."
+ ]
 }
