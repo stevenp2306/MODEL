@@ -1,0 +1,3048 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b3d2c">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CFB Model">
+<title>CFB Model</title>
+<meta name="description" content="A self-updating NFL betting model: spreads, totals, touchdowns, teasers and a graded record.">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#080c14;--card:#101a2a;--card2:#0d1622;--line:#1b2f49;--txt:#e8edf5;--mut:#8aa0b8;--dim:#5a6b80;--up:#34d67f;--dn:#ff6b6b;--gold:#f5b942;--blue:#5ec8ff}
+body{background:var(--bg);color:var(--txt);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;-webkit-font-smoothing:antialiased;padding-bottom:88px}
+.navbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:10px;
+ background:rgba(8,12,20,.93);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:12px 18px}
+.navbar b{font-size:12px;letter-spacing:.15em;color:#7ee2a8}
+.navbar .wk{color:var(--dim);font-size:12px;margin-left:auto}
+.burger{width:30px;height:24px;display:flex;flex-direction:column;justify-content:center;gap:5px;cursor:pointer}
+.burger i{height:2px;background:#cfe0f0;border-radius:2px}
+.menu{display:none;background:#0d1622;border-bottom:1px solid var(--line)}
+.menu.open{display:block}
+.menu a{display:flex;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #132132;color:var(--txt);text-decoration:none;font-weight:600;cursor:pointer}
+.menu a span{color:var(--dim);font-weight:400;font-size:13px}
+.hero{background:linear-gradient(135deg,#0b3d2c 0%,#0a1b2b 62%);padding:24px 20px 20px;border-bottom:1px solid var(--line)}
+.rec{display:flex;flex-wrap:wrap;gap:24px}
+.rec div span{display:block;font-size:10px;letter-spacing:.12em;color:var(--mut);text-transform:uppercase}
+.rec div b{font-size:34px;font-weight:800;letter-spacing:-1px;line-height:1.1;display:block}
+.up{color:var(--up)}.dn{color:var(--dn)}.gold{color:var(--gold)}.dim{color:var(--dim)}
+.big{color:var(--blue);font-weight:700}small.big{color:var(--blue)}
+.wrap{max-width:900px;margin:0 auto;padding:18px 20px}
+h2{font-size:11px;letter-spacing:.18em;color:var(--mut);text-transform:uppercase;margin:26px 0 12px}
+.view{display:none}.view.on{display:block}
+.view h2:first-child{margin-top:8px}
+.slip{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:12px;position:relative;overflow:hidden}
+.slip.hot:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--gold)}
+.slip.empty{text-align:center;color:var(--mut)}
+.slip-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.chip{background:#12301f;color:var(--up);font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px}
+.chip.gold{background:#3a2c08;color:var(--gold)}
+.cover{font-size:18px;font-weight:700}.cover small{color:var(--mut);font-size:10px;letter-spacing:.1em;text-transform:uppercase}
+.slip h3{font-size:26px;font-weight:800;letter-spacing:-.5px;margin:10px 0 3px}
+.sub{color:var(--mut);font-size:13px}
+.why{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.why summary{cursor:pointer;color:var(--blue);font-size:13px;font-weight:600;list-style:none}
+.why summary::-webkit-details-marker{display:none}
+.why summary:after{content:" ▾"}
+.facts{list-style:none;margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:9px 14px}
+.facts li{font-size:13px}.facts li.wide{grid-column:1/-1}
+.facts span{display:block;color:var(--dim);font-size:10px;letter-spacing:.1em;text-transform:uppercase}
+.facts b{font-weight:600}.facts small{color:var(--dim);font-weight:400}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.tile{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:13px}
+.tile span{font-size:10px;letter-spacing:.12em;color:var(--dim);text-transform:uppercase}
+.tile b{display:block;font-size:21px;margin-top:5px;font-weight:700}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-size:10px;letter-spacing:.12em;color:var(--dim);text-transform:uppercase;text-align:left;padding:9px 6px;border-bottom:1px solid var(--line)}
+th small{display:block;color:#3f4e60;font-size:9px}
+td{padding:11px 6px;border-bottom:1px solid #12202f;vertical-align:top}
+td b{white-space:nowrap}
+td small{display:block;color:var(--dim);font-size:11px;margin-top:2px;font-weight:400}
+td.n{text-align:right;font-variant-numeric:tabular-nums}
+tr.play td{background:#0c2418}
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;background:#12301f;color:var(--up)}
+.pill.off{background:#131c28;color:var(--dim)}
+.res.w{color:var(--up)}.res.l{color:var(--dn)}.res.p{color:var(--mut)}
+.stale{display:none;background:#3a2c08;color:var(--gold);font-size:13px;font-weight:600;padding:10px 18px;text-align:center}
+.stale.on{display:block}
+.clock{font-style:normal;color:var(--blue);font-weight:600}
+.clock.live{color:var(--dn)}
+.clock.done{color:var(--dim);font-weight:400}
+.curvebox{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:12px 12px 8px}
+.curve{width:100%;height:92px;display:block}
+.curvefoot{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--dim);padding-top:4px}
+.curvefoot b{font-size:16px}
+.barcell{width:34%}
+.bar{display:block;height:8px;border-radius:4px}
+.bar.up{background:var(--up)}.bar.dn{background:var(--dn)}
+.exp{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:14px;margin-bottom:10px;overflow:hidden}
+.exp summary{padding:14px 16px;cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.exp summary::-webkit-details-marker{display:none}
+.exp summary b{font-size:16px}
+.exp summary small{width:100%;color:var(--dim);font-size:11px;margin-top:3px}
+.exp[open] summary{border-bottom:1px solid var(--line);background:#0b1524}
+.reasons{list-style:none;padding:6px 16px 14px}
+.reasons li{padding:10px 0;border-bottom:1px solid #12202f}
+.reasons li:last-child{border-bottom:0}
+.reasons span{display:block;color:var(--blue);font-size:10px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px}
+.reasons p{font-size:14px;color:var(--txt);line-height:1.5}
+.prose p{color:var(--mut);font-size:14px;margin-bottom:12px}
+.prose b{color:var(--txt)}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:50;display:flex;background:rgba(10,16,26,.97);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:8px 0 max(10px,env(safe-area-inset-bottom))}
+.tabbar a{flex:1;text-align:center;color:var(--dim);font-size:10px;letter-spacing:.05em;text-decoration:none;cursor:pointer}
+.tabbar a b{display:block;font-size:17px;margin-bottom:2px;font-weight:400}
+.tabbar a.on{color:#7ee2a8}
+footer{color:var(--dim);font-size:12px;text-align:center;padding:26px 20px 0;line-height:1.7}
+@media(max-width:560px){.rec div b{font-size:28px}.slip h3{font-size:23px}.facts{grid-template-columns:1fr}}
+
+/* the quarterback gets his own line: his passing yards are the sum of his
+   receivers' projections, so the two can never disagree */
+.qbline{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline;
+  background:#0c1622;border:1px solid #1b3050;border-radius:10px;
+  padding:10px 12px;margin:4px 0 10px}
+.qbline b{font-size:13px;font-weight:800;letter-spacing:-.2px;margin-right:2px}
+.qbline span{font-size:11px;color:#7d93ad;letter-spacing:.02em}
+.qbline i{font-style:normal;color:#e8edf5;font-weight:700;
+  font-variant-numeric:tabular-nums}
+
+.fcteam .outs{color:#ff8d8d;font-weight:700;letter-spacing:.06em}
+
+/* ---------------- game forecast ------------------------------------------ */
+/* Flat, not a gradient. An open card is tall enough to hold two teams, so a
+   top-to-bottom fade left the first team sitting in light blue and the second
+   in near-black — the same QB box looked like two different colours. */
+.fc{background:#0d1726;border:1px solid #1b3050;
+  border-radius:14px;margin-bottom:10px;overflow:hidden}
+.fc summary{background:linear-gradient(180deg,#101d2e,#0d1726)}
+.fc summary{padding:14px 16px;cursor:pointer;list-style:none;display:grid;
+  grid-template-columns:1fr auto;gap:4px 10px;align-items:center}
+.fc summary::-webkit-details-marker{display:none}
+.fcline{font-size:19px;font-weight:800;letter-spacing:-.4px;grid-column:1/-1}
+.fcline i{color:#5f7590;font-style:normal;margin:0 4px}
+.fc summary small{grid-column:1/-1;color:#7d93ad;font-size:11.5px;margin-bottom:4px}
+.fcbar{display:flex;height:6px;border-radius:3px;overflow:hidden;background:#132134}
+.fcbar i{background:#5ec8ff}
+.fcbar u{background:#5ef2a5}
+.fcpct{font-size:10px;font-weight:800;color:#5f7590;letter-spacing:.08em;
+  font-variant-numeric:tabular-nums}
+.fc[open] summary{border-bottom:1px solid #172b44}
+.fcbody{padding:4px 16px 14px}
+.fcteam{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:14px 0 4px}
+.fcteam b{font-size:13px;font-weight:800;letter-spacing:.1em}
+.fcteam span{font-size:10.5px;color:#5f7590;letter-spacing:.04em}
+.fcbody table{font-size:13px}
+.fcbody td{padding:9px 5px;border-bottom:1px solid #111f2f}
+
+/* a total carries both crests, overlapped so the card keeps its rhythm */
+.pairmark{display:inline-flex;align-items:center;flex:none}
+.pairmark .badge{width:43px;height:43px}
+.pairmark .badge:last-child{margin-left:-15px}
+
+/* ---------------- grouped menu ------------------------------------------- */
+.menu .grp{display:flex;align-items:center;justify-content:space-between;
+  padding:11px 18px 10px;font-size:9.5px;letter-spacing:.22em;font-weight:800;
+  color:#5f7590;text-transform:uppercase;background:#0a121d;cursor:pointer;
+  border-bottom:1px solid #132132;user-select:none}
+.menu .grp .ct{color:#3f5570;letter-spacing:.06em;font-weight:700}
+.menu .grp:after{content:'';width:6px;height:6px;border-right:1.6px solid #5f7590;
+  border-bottom:1.6px solid #5f7590;transform:rotate(45deg);margin-left:10px;
+  transition:transform .18s;flex:none}
+.menu .grp.open:after{transform:rotate(-135deg)}
+.menu .grp .lbl{flex:1}
+.menu a.in{display:none}
+.menu a.in.show{display:flex}
+.menu a.in{padding-left:26px}
+
+.vtabs{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
+.vtabs button{background:#101d2e;border:1px solid #1b3050;color:#8fa8c0;font-size:10px;
+  letter-spacing:.14em;font-weight:800;text-transform:uppercase;padding:8px 12px;
+  border-radius:8px;cursor:pointer}
+.vtabs button.on{border-color:var(--acc1);color:var(--acc1)}
+.vtabs .kline{display:none;background:#101d2e;border:1px solid #1b3050;color:#cfe0f0;
+  border-radius:8px;padding:7px 9px;font-size:11px;font-weight:700;margin-left:auto}
+.vtabs .kline.on{display:block}
+.vsearch{width:100%;background:#0c1622;border:1px solid #1b3050;border-radius:10px;
+  color:#e8edf5;font-size:14px;padding:11px 13px;margin-bottom:6px}
+.vsearch::placeholder{color:#4c6076}
+input.px{width:74px;background:#0c1622;border:1px solid #24405f;border-radius:7px;
+  color:#e8edf5;font-size:13px;font-weight:700;padding:7px 8px;text-align:right;
+  font-variant-numeric:tabular-nums}
+input.px:focus{outline:none;border-color:var(--acc1)}
+td.edge{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+td.edge.pos{color:#5ef2a5}
+td.edge.neg{color:#ff8d8d}
+tr.hit td{background:rgba(94,242,165,.07)}
+tr.hit td:first-child{box-shadow:inset 3px 0 0 #5ef2a5}
+
+.note{color:#7d93ad;font-size:12.5px;line-height:1.6;margin:-4px 0 14px}
+.note b{color:#e8edf5}
+.tzbar{width:44%}
+.tz{position:relative;display:block;height:8px;border-radius:4px;background:#132134;
+  overflow:visible}
+.tz i{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+.tz u{position:absolute;top:-4px;bottom:-4px;width:2px;background:#e8edf5;opacity:.85}
+.calibbox{background:linear-gradient(180deg,#0f1b2b,#0a121d);border:1px solid #1b3050;
+  border-radius:14px;padding:12px}
+.calib{display:block;width:100%;height:auto}
+.calib .ax{stroke:#1b3050;stroke-width:.8}
+.calib .diag{stroke:#5f7590;stroke-width:1;stroke-dasharray:4 3}
+.calib .cline{fill:none;stroke:#5ec8ff;stroke-width:1.6;opacity:.55}
+.calib .clab{font-size:7px;font-weight:800;letter-spacing:.1em;fill:#5f7590;text-anchor:middle}
+.calib .cline{fill:none;stroke:#5ec8ff;stroke-width:1.2;opacity:.35}
+
+/* ================= LINE MOVEMENT CHARTS ================================== */
+.lh{margin-top:12px;padding-top:12px;border-top:1px solid #172b44}
+.lh .hd{display:flex;align-items:center;gap:8px;font-size:9px;letter-spacing:.16em;
+  font-weight:800;color:#5f7590;text-transform:uppercase;margin-bottom:9px;flex-wrap:wrap}
+.lh .hd b{color:#e8edf5;font-size:11px;letter-spacing:0}
+.lh .tag{font-size:8.5px;letter-spacing:.12em;font-weight:800;padding:3px 7px;border-radius:5px}
+.lh .tag.steam{background:#3a2c08;color:#ffcf5c}
+.lh .tag.rlm{background:#0d2a3d;color:#5ec8ff}
+.lh .tag.good{background:#12301f;color:#5ef2a5}
+.lh .tag.bad{background:#341717;color:#ff8d8d}
+.lh .tag.hold{background:#121d2b;color:#8fa8c0}
+.lh svg{display:block;width:100%;height:auto;overflow:visible}
+.lh .axis{stroke:#1b3050;stroke-width:.6}
+.lh .mkt{fill:none;stroke:#5ec8ff;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.lh .shp{fill:none;stroke:#5ef2a5;stroke-width:1.2;stroke-dasharray:3 2.5;opacity:.85}
+.lh .pub{fill:none;stroke:#8fa8c0;stroke-width:1.2;stroke-dasharray:3 2.5;opacity:.55}
+.lh .dot{fill:#5ec8ff}
+.lh .betl{stroke:#ffcf5c;stroke-width:1;stroke-dasharray:2 2}
+.lh .betd{fill:#ffcf5c}
+.lh .lab{font-size:6.5px;font-weight:800;letter-spacing:.06em;fill:#5f7590}
+.lh .key{display:flex;gap:12px;margin-top:6px;font-size:9px;color:#5f7590;flex-wrap:wrap}
+.lh .key i{display:inline-block;width:12px;height:2px;vertical-align:3px;margin-right:5px}
+.spark{width:78px;height:22px;display:block}
+.spark path{fill:none;stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}
+td .sparkcell{display:flex;align-items:center;gap:8px}
+
+/* ================= ANIMATED MESH HERO ==================================== */
+/* A few soft blobs in the featured team's colours, drifting and blending on a
+   half-resolution canvas (cheap) that CSS blurs back up. It pauses whenever
+   the hero scrolls out of view or the tab is hidden, so it costs nothing when
+   you aren't looking at it. */
+.feat canvas.mesh{position:absolute;inset:0;width:100%;height:100%;z-index:0;
+  filter:blur(26px) saturate(1.25);opacity:.85}
+.feat .fin{position:relative;z-index:2}
+@media(prefers-reduced-motion:reduce){.feat canvas.mesh{filter:blur(26px)}}
+
+/* ================= POWER RATINGS MAP ===================================== */
+.mapwrap{position:relative;border:1px solid #1b3050;border-radius:14px;overflow:hidden;
+  background:radial-gradient(120% 120% at 50% 0%,#101d2e,#080f19);touch-action:none;
+  margin-bottom:12px}
+.mapwrap svg{display:block;width:100%;height:auto;cursor:grab}
+.mapwrap svg:active{cursor:grabbing}
+.quad{font-size:7px;letter-spacing:.14em;font-weight:800;fill:#3f5570;
+  text-transform:uppercase}
+.axl{font-size:7.5px;letter-spacing:.16em;font-weight:800;fill:#5f7590}
+.grid line{stroke:#152539;stroke-width:.5}
+.grid line.mid{stroke:#2a4258}
+.node{cursor:pointer}
+.node circle.bg{fill:#0b1523;stroke-width:1.2}
+.node text{font-size:6.5px;font-weight:900;text-anchor:middle;fill:#fff}
+.node.dim{opacity:.30}
+.mapbar{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.mapbar button{background:#101d2e;border:1px solid #1b3050;color:#8fa8c0;font-size:10px;
+  letter-spacing:.14em;font-weight:800;text-transform:uppercase;padding:7px 11px;
+  border-radius:8px;cursor:pointer}
+.mapbar button.on{border-color:var(--acc1);color:var(--acc1)}
+.mapbar .hint{color:#5f7590;font-size:10.5px;margin-left:auto}
+.mapcard{position:absolute;left:10px;right:10px;bottom:10px;z-index:3;
+  background:rgba(8,14,24,.96);border:1px solid #24405f;border-radius:12px;padding:11px 13px;
+  display:none;box-shadow:0 16px 34px -16px #000}
+.mapcard.on{display:block;animation:drop .2s ease}
+.mapcard b{font-size:15px;font-weight:800;letter-spacing:-.3px}
+.mapcard .r{display:flex;gap:16px;margin-top:5px;font-size:11.5px;color:#8fa8c0}
+.mapcard .r i{font-style:normal;color:#e8edf5;font-weight:700}
+.mapcard .x{position:absolute;top:8px;right:11px;color:#5f7590;font-size:15px;cursor:pointer}
+
+/* ============ A3 · BROADCAST PRO+ ============ */
+body{background:#05080e;font-family:'Helvetica Neue',Inter,-apple-system,sans-serif;
+  padding-bottom:148px}
+body:before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.35;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/></filter><rect width='140' height='140' filter='url(%23n)' opacity='.5'/></svg>")}
+/* lift content above the grain layer — but never touch position here: the
+   header is sticky, the tab bar is fixed, and overriding those pinned them
+   to the page instead of the screen */
+.wrap,.hero{position:relative;z-index:1}
+
+.navbar{background:rgba(5,8,14,.86);backdrop-filter:blur(16px) saturate(150%);
+  border-bottom:1px solid #16243a;padding:13px 18px}
+.navbar b{font-size:13px;letter-spacing:.24em;color:#fff;font-weight:800;display:flex;
+  align-items:center;gap:9px}
+.navbar b:before{content:'';width:4px;height:15px;border-radius:2px;
+  background:linear-gradient(180deg,#5ef2a5,#12a45f);box-shadow:0 0 12px rgba(52,214,127,.7)}
+.navbar .wk{font-size:11px;color:#6b8199}
+.burger i{background:#8fa8c0}
+
+/* ---------- FEATURED PLAY HERO ---------- */
+.feat{position:relative;overflow:hidden;border-bottom:1px solid #16243a;
+  background:linear-gradient(165deg,
+    color-mix(in srgb,var(--t1) 55%,#07101c) 0%,
+    color-mix(in srgb,var(--t1) 22%,#070d16) 45%,#05080e 100%)}
+.feat:after{content:'';position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(90deg,transparent 0 46px,rgba(255,255,255,.05) 46px 47px)}
+.feat .fin{position:relative;z-index:2;padding:18px 20px 22px}
+.feat .why summary{color:#fff;opacity:.9}
+.feat .facts span{color:rgba(255,255,255,.55)}
+.feat .tag{display:inline-flex;align-items:center;gap:7px;font-size:9px;letter-spacing:.22em;
+  font-weight:800;color:#0a1b12;background:#5ef2a5;padding:5px 10px;border-radius:5px;
+  text-transform:uppercase}
+.vs{display:flex;align-items:center;justify-content:center;gap:16px;margin:16px 0 4px}
+.vs .x{font-size:11px;letter-spacing:.2em;font-weight:800;color:rgba(255,255,255,.55)}
+.badge{width:54px;height:54px;border-radius:50%;position:relative;overflow:hidden;flex:none;
+  border:2px solid rgba(255,255,255,.28);box-shadow:0 8px 20px -8px #000;
+  display:flex;align-items:center;justify-content:center}
+.badge s{position:absolute;inset:0;text-decoration:none}
+.badge s:before{content:'';position:absolute;inset:0;background:var(--b1)}
+.badge s:after{content:'';position:absolute;inset:0;background:var(--b2);
+  clip-path:polygon(100% 0,100% 100%,0 100%)}
+.badge em{position:relative;z-index:2;font-style:normal;font-size:13px;font-weight:900;
+  color:#fff;letter-spacing:-.4px;text-shadow:0 1px 4px rgba(0,0,0,.85)}
+.badge.sm{width:26px;height:26px;border-width:1.5px}
+.badge.sm em{font-size:8px}
+.feat h1{font-size:40px;font-weight:900;letter-spacing:-2px;text-align:center;
+  text-transform:uppercase;margin:6px 0 2px;text-shadow:0 4px 22px rgba(0,0,0,.6)}
+.feat .meta{text-align:center;color:rgba(232,240,255,.72);font-size:12px;letter-spacing:.03em}
+.feat .row{display:flex;align-items:center;justify-content:center;gap:22px;margin-top:16px}
+.feat .stat{text-align:center}
+.feat .stat span{display:block;font-size:8.5px;letter-spacing:.2em;font-weight:800;
+  color:rgba(232,240,255,.6)}
+.feat .stat b{font-size:19px;font-weight:800;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+
+/* ---------- ring ---------- */
+.ring{position:relative;flex:none}
+.ring svg{transform:rotate(-90deg);display:block}
+.ring .arc{stroke-dasharray:var(--C);stroke-dashoffset:var(--C);
+  animation:draw 1.1s cubic-bezier(.22,1,.36,1) .15s forwards}
+@keyframes draw{to{stroke-dashoffset:var(--O)}}
+.ring i{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;font-style:normal}
+.ring i b{font-size:17px;font-weight:800;letter-spacing:-.5px;line-height:1}
+.ring i s{text-decoration:none;font-size:7px;letter-spacing:.16em;color:#8fa8c0;font-weight:800}
+.ring.sm i b{font-size:13px}.ring.sm i s{font-size:6px}
+
+/* ---------- record strip ---------- */
+.hero{background:linear-gradient(180deg,#0a1220,#05080e);padding:16px 20px;
+  border-bottom:1px solid #16243a}
+.rec{display:grid;grid-template-columns:repeat(4,1fr)}
+.rec div{border-right:1px solid rgba(255,255,255,.07);padding-right:10px}
+.rec div:last-child{border-right:0}
+.rec div span{font-size:8.5px;letter-spacing:.2em;color:#6b8199;font-weight:800}
+.rec div b{font-size:24px;font-weight:800;letter-spacing:-1px;margin-top:2px;
+  font-variant-numeric:tabular-nums}
+
+h2{font-size:10px;letter-spacing:.26em;color:#7d93ad;font-weight:800;margin:28px 0 13px;
+  display:flex;align-items:center;gap:10px}
+h2:after{content:'';flex:1;height:1px;background:linear-gradient(90deg,#24405f,transparent)}
+
+/* ---------- pick cards ---------- */
+.slip{background:linear-gradient(180deg,rgba(18,31,48,.92),rgba(9,17,27,.92));
+  border:1px solid #1b3050;border-radius:16px;padding:0;overflow:hidden;position:relative;
+  margin-bottom:14px;box-shadow:0 14px 34px -20px #000;backdrop-filter:blur(6px)}
+.slip.hot:before{display:none}
+.slip.tm{border-color:color-mix(in srgb,var(--t1) 40%,#1b3050)}
+.slip .band{position:absolute;left:0;right:0;top:0;height:4px;
+  background:linear-gradient(90deg,var(--t1),var(--t2) 72%,transparent)}
+.slip .glow{position:absolute;right:-80px;top:-80px;width:230px;height:230px;border-radius:50%;
+  background:radial-gradient(circle,var(--t1),transparent 68%);opacity:.14;filter:blur(16px)}
+.slip .inner{position:relative;z-index:2;padding:16px 18px 18px}
+.matchup{display:flex;align-items:center;gap:9px;font-size:10.5px;letter-spacing:.14em;
+  font-weight:800;color:#8fa8c0;text-transform:uppercase;margin-bottom:14px}
+.matchup .at{color:#45607d}
+.slip-top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.headline{display:flex;align-items:center;gap:13px;margin:12px 0 4px}
+.slip h3{font-size:30px;font-weight:900;letter-spacing:-1.2px;text-transform:uppercase;
+  margin:0;line-height:1}
+.sub{color:#7d93ad;font-size:12px}
+.chip{border-radius:6px;letter-spacing:.14em;text-transform:uppercase;font-size:9.5px;
+  font-weight:800;padding:6px 10px;background:#12301f;color:#5ef2a5}
+.chip.gold{background:linear-gradient(180deg,#4a3a0d,#322607);color:#ffcf5c;
+  border:1px solid rgba(255,207,92,.35)}
+.gauge{margin-top:14px;padding-top:13px;border-top:1px solid #172b44}
+.gauge .lbl{display:flex;justify-content:space-between;font-size:9px;letter-spacing:.16em;
+  color:#7d93ad;font-weight:800;text-transform:uppercase;margin-bottom:7px}
+.gauge .lbl b{color:#e8edf5;font-size:11px;letter-spacing:0}
+.track{height:7px;border-radius:4px;background:#132134;position:relative;overflow:hidden}
+.track i{position:absolute;top:0;bottom:0;left:0;border-radius:4px;width:0;
+  background:linear-gradient(90deg,#1f9e63,#5ef2a5);box-shadow:0 0 12px rgba(94,242,165,.5);
+  animation:grow 1s cubic-bezier(.22,1,.36,1) .2s forwards}
+@keyframes grow{to{width:var(--w)}}
+.track u{position:absolute;top:-3px;bottom:-3px;width:2px;background:#8fa8c0;opacity:.65}
+.gauge .ends{display:flex;justify-content:space-between;font-size:10px;color:#5f7590;
+  margin-top:6px;font-variant-numeric:tabular-nums}
+.why{margin-top:14px;border-top:1px solid #172b44;padding-top:12px}
+.why summary{color:#5ec8ff;font-size:12px;font-weight:700}
+.facts span{letter-spacing:.14em;font-size:9px;color:#5f7590;font-weight:800}
+
+/* ---------- tiles with mini rings ---------- */
+.tiles{gap:11px}
+.tile{background:linear-gradient(180deg,#0f1b2b,#0a121d);border:1px solid #1b3050;
+  border-radius:13px;padding:14px;position:relative;overflow:hidden;
+  display:flex;align-items:center;gap:12px}
+.tile:before{content:'';position:absolute;left:0;top:0;width:100%;height:1px;
+  background:linear-gradient(90deg,rgba(94,242,165,.5),transparent)}
+.tile .txt{min-width:0}
+.tile span{font-size:9px;letter-spacing:.18em;color:#5f7590;font-weight:800;display:block}
+.tile b{font-size:24px;font-weight:800;letter-spacing:-1px;margin-top:5px;display:block;
+  font-variant-numeric:tabular-nums}
+
+/* ---------- tables ---------- */
+table{font-size:13.5px}
+th{letter-spacing:.18em;font-size:9px;color:#5f7590;font-weight:800;padding:10px 6px;
+  border-bottom:1px solid #1b3050}
+td{border-bottom:1px solid #111f2f;padding:12px 6px}
+td .gm{display:flex;align-items:center;gap:7px}
+tr.play td{background:linear-gradient(90deg,rgba(52,214,127,.15),rgba(52,214,127,.02));
+  box-shadow:inset 3px 0 0 #34d67f}
+.pill{border-radius:6px;font-size:10px;letter-spacing:.08em;font-weight:800;
+  text-transform:uppercase;background:#12301f;color:#5ef2a5}
+.pill.off{background:#121d2b;color:#5f7590}
+.clock{color:#5ec8ff;font-weight:700;font-variant-numeric:tabular-nums}
+.clock.live{color:#ff6b6b}
+.clock.live:before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;
+  background:#ff6b6b;margin-right:5px;animation:bl 1.2s infinite}
+@keyframes bl{50%{opacity:.25}}
+
+.curvebox{background:linear-gradient(180deg,#0f1b2b,#0a121d);border:1px solid #1b3050;
+  border-radius:14px}
+.exp{background:linear-gradient(180deg,#101d2e,#0a121d);border:1px solid #1b3050;
+  border-radius:14px}
+.exp summary b{font-size:16px;font-weight:800}
+.reasons span{color:#5ef2a5;letter-spacing:.16em;font-size:9px;font-weight:800}
+
+.tabbar{background:rgba(5,8,14,.96);backdrop-filter:blur(16px);border-top:1px solid #16243a;
+  padding:9px 0 max(11px,env(safe-area-inset-bottom))}
+.tabbar a{font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;
+  color:#5f7590;position:relative;padding-top:4px}
+.tabbar a b svg{width:21px;height:21px;display:block;margin:0 auto 4px;stroke-width:1.9}
+.tabbar a.on{color:#5ef2a5}
+.tabbar a.on:before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:24px;height:3px;border-radius:0 0 3px 3px;background:#5ef2a5;
+  box-shadow:0 0 14px rgba(94,242,165,.8)}
+footer{color:#4c6076;font-size:11.5px}
+@media(max-width:560px){.feat h1{font-size:34px}.rec div b{font-size:21px}.slip h3{font-size:26px}}
+
+/* ============ v4 additions ============ */
+/* live kickoff ticker under the navbar */
+.topbar{position:sticky;top:0;z-index:40}
+.topbar .navbar{position:static}
+.topbar .menu{position:absolute;top:100%;left:0;right:0;z-index:39;
+  max-height:72vh;overflow:auto;-webkit-overflow-scrolling:touch;
+  box-shadow:0 22px 44px -18px rgba(0,0,0,.95);border-top:1px solid #16243a}
+.topbar .menu.open{animation:drop .22s cubic-bezier(.22,1,.36,1)}
+@keyframes drop{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+.tick{z-index:35;display:flex;align-items:center;gap:10px;
+  padding:9px 18px;background:rgba(9,14,22,.92);backdrop-filter:blur(12px);
+  border-bottom:1px solid #16243a;font-size:11px;letter-spacing:.06em;color:#8fa8c0;
+  overflow:hidden;white-space:nowrap}
+.tick .k{color:#5ef2a5;font-weight:800;letter-spacing:.18em;font-size:9px;flex:none;
+  display:flex;align-items:center;gap:6px}
+.tick .k:before{content:'';width:6px;height:6px;border-radius:50%;background:#5ef2a5;
+  box-shadow:0 0 8px #5ef2a5;animation:bl 1.6s infinite}
+.tick .scroller{flex:1;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent)}
+.tick .scroller div{display:inline-block;animation:slide 26s linear infinite}
+.tick b{color:#e8edf5;font-weight:700}
+.tick .sep{color:#2c4258}
+@keyframes slide{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* view transitions */
+.view.on{animation:fade .28s cubic-bezier(.22,1,.36,1)}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* logo support — real crests when the files exist, colour badges otherwise */
+.badge img{position:relative;z-index:3;width:74%;height:74%;object-fit:contain;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.7))}
+.badge.has em,.badge.has s{display:none}
+.badge.has{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.16)}
+
+/* slate rows expand */
+tr.gm{cursor:pointer}
+tr.gm.open td{background:rgba(94,242,165,.05)}
+tr.dr td{padding:0;border-bottom:1px solid #111f2f;background:#0a121d}
+.drawer{padding:14px 10px 16px;display:grid;gap:12px}
+.drawer .mini{display:flex;align-items:center;gap:10px}
+.drawer .mini span{font-size:9px;letter-spacing:.16em;color:#5f7590;font-weight:800;width:54px;
+  flex:none}
+.drawer .mini .t{flex:1;height:6px;border-radius:3px;background:#132134;position:relative;
+  overflow:hidden}
+.drawer .mini .t i{position:absolute;top:0;bottom:0;border-radius:3px}
+.drawer .mini b{font-size:12px;font-variant-numeric:tabular-nums;width:48px;text-align:right}
+.drawer .note{font-size:11.5px;color:#7d93ad;line-height:1.5}
+/* once both crests are real logos the codes beside them are noise */
+.gm.logos > span:last-child{display:none}
+.gm.logos{gap:9px}
+.gm.logos .badge{width:30px;height:30px}
+.matchup.logos{font-size:0;gap:10px}
+.matchup.logos .at{font-size:10.5px}
+.matchup.logos .badge{width:30px;height:30px}
+.headline.logos .badge{width:50px;height:50px}
+
+/* edge heat */
+td.n b.heat1{color:#5ef2a5}
+td.n b.heat2{color:#ffcf5c}
+td.n b.heat0{color:#8fa8c0}
+
+/* count-up numbers get tabular spacing so they don't jitter */
+.rec div b,.feat .stat b{font-variant-numeric:tabular-nums}
+
+/* ---------------- team theming: the whole app wears the top play ---------- */
+:root{--acc1:#5ef2a5;--acc2:#12a45f}
+.navbar b:before{background:linear-gradient(180deg,var(--acc1),var(--acc2));
+  box-shadow:0 0 12px color-mix(in srgb,var(--acc1) 70%,transparent)}
+.navbar b{color:#fff}
+.tabbar a.on{color:var(--acc1)}
+.tabbar a.on:before{background:var(--acc1);
+  box-shadow:0 0 14px color-mix(in srgb,var(--acc1) 80%,transparent)}
+.tick .k{color:var(--acc1)}
+.tick .k:before{background:var(--acc1);box-shadow:0 0 8px var(--acc1)}
+h2:after{background:linear-gradient(90deg,color-mix(in srgb,var(--acc1) 45%,#24405f),transparent)}
+.tile:before{background:linear-gradient(90deg,color-mix(in srgb,var(--acc1) 60%,transparent),transparent)}
+.feat .tag{background:var(--acc1);color:#07120c}
+.chip{background:color-mix(in srgb,var(--acc1) 16%,#0d1b13);color:var(--acc1)}
+
+/* ---------------- win probability bars on the slate ---------------------- */
+.wp{display:flex;align-items:center;gap:7px;margin-top:7px}
+.wp .wbar{flex:1;height:7px;border-radius:4px;overflow:hidden;display:flex;
+  background:#132134;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)}
+.wp .wbar i{height:100%;display:block;transition:width .6s cubic-bezier(.22,1,.36,1)}
+.wp em{font-style:normal;font-size:9.5px;font-weight:800;letter-spacing:.04em;
+  color:#8fa8c0;font-variant-numeric:tabular-nums;width:30px}
+.wp em.r{text-align:right}
+.wp em.hi{color:#e8edf5}
+
+/* ---------------- app polish ---------------------------------------------- */
+#splash{position:fixed;inset:0;z-index:999;display:flex;align-items:center;
+  justify-content:center;flex-direction:column;gap:14px;background:#05080e;
+  transition:opacity .45s ease,visibility .45s}
+#splash.gone{opacity:0;visibility:hidden}
+#splash .mk{position:relative;width:82px;height:82px;border-radius:22px;background:#0b1220;
+  display:flex;align-items:center;justify-content:center;font-size:23px;font-weight:900;
+  letter-spacing:-.5px;color:#eef4fb;border:1px solid #1b3050;
+  box-shadow:0 20px 50px -24px var(--acc1)}
+#splash .mk:after{content:'';position:absolute;margin-top:46px;width:52px;height:5px;
+  border-radius:3px;background:var(--acc1)}
+#splash .ld{width:120px;height:3px;border-radius:2px;background:#132134;overflow:hidden}
+#splash .ld i{display:block;height:100%;width:40%;border-radius:2px;background:var(--acc1);
+  animation:sweep 1s ease-in-out infinite}
+@keyframes sweep{0%{transform:translateX(-110%)}100%{transform:translateX(320%)}}
+
+#ptr{position:fixed;top:0;left:0;right:0;z-index:60;display:flex;align-items:center;
+  justify-content:center;height:0;overflow:hidden;color:var(--acc1);font-size:10px;
+  letter-spacing:.2em;font-weight:800;background:rgba(5,8,14,.9)}
+#ptr svg{width:17px;height:17px;margin-right:8px}
+#ptr.spin svg{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+tr.flash td{animation:flash 1.1s ease-out}
+@keyframes flash{0%{background:rgba(94,242,165,.30)}100%{background:transparent}}
+tr.flash.lose td{animation:flashl 1.1s ease-out}
+@keyframes flashl{0%{background:rgba(255,107,107,.22)}100%{background:transparent}}
+
+/* ---- chart crosshair ---- */
+.curvebox{position:relative}
+.curve{touch-action:none;cursor:crosshair}
+.tip{position:absolute;pointer-events:none;opacity:0;transition:opacity .12s;
+  background:rgba(8,14,24,.97);border:1px solid #24405f;border-radius:9px;padding:8px 10px;
+  font-size:11.5px;line-height:1.45;white-space:nowrap;z-index:5;
+  box-shadow:0 10px 26px -12px #000;transform:translate(-50%,-115%)}
+.tip.on{opacity:1}
+.tip b{display:block;font-size:13px;font-weight:800;letter-spacing:-.2px;margin-bottom:2px}
+.tip .wk{color:#5f7590;font-size:9px;letter-spacing:.16em;font-weight:800;text-transform:uppercase}
+.tip .rowt{display:flex;justify-content:space-between;gap:14px;margin-top:3px}
+.tip .rowt span{color:#7d93ad}
+.tip .w{color:#5ef2a5;font-weight:700}.tip .l{color:#ff6b6b;font-weight:700}
+.tip .p{color:#8fa8c0;font-weight:700}
+
+</style></head><body><!--SPORTBAR--><style>.sportbar{display:flex;gap:6px;overflow-x:auto;padding:8px 12px;background:#05080e;border-bottom:1px solid #1b2f49;scrollbar-width:none;position:relative;z-index:60}.sportbar::-webkit-scrollbar{display:none}.sb-t{flex:0 0 auto;display:flex;align-items:center;gap:5px;min-height:34px;padding:0 14px;border-radius:999px;border:1px solid #1b2f49;color:#8aa0b8;font:700 12px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.1em;text-decoration:none;white-space:nowrap}.sb-t:hover{color:#e8edf5}.sb-t.off{opacity:.45}.sb-t small{font-weight:500;letter-spacing:.04em;font-size:10px}</style><nav class="sportbar" aria-label="Sports"><a class="sb-t" href="home.html">🏟 Home</a><a class="sb-t" href="index.html">🏈 NFL</a><a class="sb-t" href="cfb.html" style="color:#f5b942;border-color:#f5b942" aria-current="page">🎓 CFB</a><a class="sb-t" href="mlb.html">⚾ MLB</a><a class="sb-t" href="nhl.html">🏒 NHL</a></nav><!--/SPORTBAR-->
+
+<div id="stale" class="stale"></div>
+<div class="navbar"><b>🎓 CFB MODEL</b><span class="wk">Week 5 · Wed Sep 30, 1:18 PM</span>
+  <div class="burger" onclick="menu()"><i></i><i></i><i></i></div></div>
+<nav class="menu">
+  <a onclick="go('bets')">Today's bets <span>8 on the card</span></a>
+  <a onclick="go('slate')">Full slate <span>56 games</span></a>
+  <a onclick="go('slate')">Rating moves <span>112 teams</span></a>
+  <a onclick="go('why')">Play explanations <span>all 56 games</span></a>
+  <a onclick="go('record')">My record <span>0-0 · +0.0u</span></a>
+  <a onclick="go('power')">Power ratings <span>138 teams</span></a>
+  <a onclick="go('how')">How it works <span></span></a><a onclick="go('conf')">Conferences <span>12 leagues</span></a><a onclick="go('record')">Model vs the market <span>160 games</span></a></nav>
+
+<header class="hero"><div class="rec">
+  <div><span>Season</span><b>0-0</b></div>
+  <div><span>Units</span><b class="">+0.0u</b></div>
+  <div><span>Win rate</span><b>—</b></div>
+  <div><span>Model closer</span><b>64/160</b></div>
+</div></header>
+
+<main class="wrap">
+ <section id="bets" class="view on">
+   <h2>Today's bets</h2>
+      <article class="slip">
+        <div class="slip-top">
+          <span class="chip">💎 MAX · 3u</span>
+          <span class="cover">86% <small>cover</small></span>
+        </div>
+        <h3>BUF +13.5</h3>
+        <p class="sub">WMU @ BUF · Sat 10/3 · Spread
+           <em class="clock" data-k="0"></em></p>
+        <details class="why"><summary>Why this pick</summary><ul class="facts"><li><span>Model line</span><b>-4.0</b></li><li><span>Book line</span><b>13.5</b></li><li><span>Edge</span><b class="big">+17.5 pts</b></li><li><span>Cover chance</span><b>86%</b></li><li><span>WMU</span><b>#95 Western Michigan · power -17.8</b></li><li><span>BUF</span><b>#114 Buffalo · power -16.3</b></li></ul>
+        <p class="sub" style="margin-top:10px"><a onclick="go('why')" style="color:var(--blue);cursor:pointer">Read the full write-up →</a></p></details>
+      </article>
+      <article class="slip">
+        <div class="slip-top">
+          <span class="chip">💎 MAX · 3u</span>
+          <span class="cover">83% <small>cover</small></span>
+        </div>
+        <h3>FSU +2.5</h3>
+        <p class="sub">UVA @ FSU · Sat 10/3 · Spread
+           <em class="clock" data-k="0"></em></p>
+        <details class="why"><summary>Why this pick</summary><ul class="facts"><li><span>Model line</span><b>-12.5</b></li><li><span>Book line</span><b>2.5</b></li><li><span>Edge</span><b class="big">+15.0 pts</b></li><li><span>Cover chance</span><b>83%</b></li><li><span>UVA</span><b>#37 Virginia · power -1.2</b></li><li><span>FSU</span><b>#38 Florida State · power 8.7</b></li></ul>
+        <p class="sub" style="margin-top:10px"><a onclick="go('why')" style="color:var(--blue);cursor:pointer">Read the full write-up →</a></p></details>
+      </article>
+      <article class="slip">
+        <div class="slip-top">
+          <span class="chip">🔥 STRONG · 2u</span>
+          <span class="cover">80% <small>cover</small></span>
+        </div>
+        <h3>UNDER 62.0</h3>
+        <p class="sub">ORST @ CSU · Sat 10/3 · Total
+           <em class="clock" data-k="0"></em></p>
+        <details class="why"><summary>Why this pick</summary><ul class="facts"><li><span>Model line</span><b>49.5</b></li><li><span>Book line</span><b>62.0</b></li><li><span>Edge</span><b class="big">-12.5 pts</b></li><li><span>Cover chance</span><b>80%</b></li><li><span>ORST</span><b>#94 Oregon State · power -9.8</b></li><li><span>CSU</span><b>#101 Colorado State · power -13.1</b></li></ul>
+        <p class="sub" style="margin-top:10px"><a onclick="go('why')" style="color:var(--blue);cursor:pointer">Read the full write-up →</a></p></details>
+      </article>
+      <article class="slip">
+        <div class="slip-top">
+          <span class="chip">🔥 STRONG · 2u</span>
+          <span class="cover">77% <small>cover</small></span>
+        </div>
+        <h3>CLT +20.5</h3>
+        <p class="sub">MEM @ CLT · Sat 10/3 · Spread
+           <em class="clock" data-k="0"></em></p>
+        <details class="why"><summary>Why this pick</summary><ul class="facts"><li><span>Model line</span><b>8.5</b></li><li><span>Book line</span><b>20.5</b></li><li><span>Edge</span><b class="big">+12.0 pts</b></li><li><span>Cover chance</span><b>77%</b></li><li><span>MEM</span><b>#72 Memphis · power -10.4</b></li><li><span>CLT</span><b>#138 Charlotte · power -21.5</b></li></ul>
+        <p class="sub" style="margin-top:10px"><a onclick="go('why')" style="color:var(--blue);cursor:pointer">Read the full write-up →</a></p></details>
+      </article>
+      <article class="slip">
+        <div class="slip-top">
+          <span class="chip">🔥 STRONG · 2u</span>
+          <span class="cover">77% <small>cover</small></span>
+        </div>
+        <h3>TTU -12.5</h3>
+        <p class="sub">TTU @ COLO · Sat 10/3 · Spread
+           <em class="clock" data-k="0"></em></p>
+        <details class="why"><summary>Why this pick</summary><ul class="facts"><li><span>Model line</span><b>24.5</b></li><li><span>Book line</span><b>12.5</b></li><li><span>Edge</span><b class="big">-12.0 pts</b></li><li><span>Cover chance</span><b>77%</b></li><li><span>TTU</span><b>#8 Texas Tech · power 15.3</b></li><li><span>COLO</span><b>#65 Colorado · power -11.6</b></li></ul>
+        <p class="sub" style="margin-top:10px"><a onclick="go('why')" style="color:var(--blue);cursor:pointer">Read the full write-up →</a></p></details>
+      </article>
+      <article class="slip">
+        <div class="slip-top">
+          <span class="chip">🔥 STRONG · 2u</span>
+          <span class="cover">76% <small>cover</small></span>
+        </div>
+        <h3>WKU +2.5</h3>
+        <p class="sub">WKU @ NMSU · Thu 10/1 · Spread
+           <em class="clock" data-k="0"></em></p>
+        <details class="why"><summary>Why this pick</summary><ul class="facts"><li><span>Model line</span><b>9.0</b></li><li><span>Book line</span><b>-2.5</b></li><li><span>Edge</span><b class="big">-11.5 pts</b></li><li><span>Cover chance</span><b>76%</b></li><li><span>WKU</span><b>#87 Western Kentucky · power -10.6</b></li><li><span>NMSU</span><b>#122 New Mexico State · power -21.9</b></li></ul>
+        <p class="sub" style="margin-top:10px"><a onclick="go('why')" style="color:var(--blue);cursor:pointer">Read the full write-up →</a></p></details>
+      </article>
+      <article class="slip">
+        <div class="slip-top">
+          <span class="chip">✅ SOLID · 1u</span>
+          <span class="cover">73% <small>cover</small></span>
+        </div>
+        <h3>EMU +6.5</h3>
+        <p class="sub">EMU @ MASS · Sat 10/3 · Spread
+           <em class="clock" data-k="0"></em></p>
+        <details class="why"><summary>Why this pick</summary><ul class="facts"><li><span>Model line</span><b>3.5</b></li><li><span>Book line</span><b>-6.5</b></li><li><span>Edge</span><b class="big">-10.0 pts</b></li><li><span>Cover chance</span><b>73%</b></li><li><span>EMU</span><b>#118 Eastern Michigan · power -19.1</b></li><li><span>MASS</span><b>#137 UMass · power -25.1</b></li></ul>
+        <p class="sub" style="margin-top:10px"><a onclick="go('why')" style="color:var(--blue);cursor:pointer">Read the full write-up →</a></p></details>
+      </article>
+      <article class="slip">
+        <div class="slip-top">
+          <span class="chip">✅ SOLID · 1u</span>
+          <span class="cover">72% <small>cover</small></span>
+        </div>
+        <h3>UGA -24.5</h3>
+        <p class="sub">VAN @ UGA · Sat 10/3 · Spread
+           <em class="clock" data-k="0"></em></p>
+        <details class="why"><summary>Why this pick</summary><ul class="facts"><li><span>Model line</span><b>-34.0</b></li><li><span>Book line</span><b>-24.5</b></li><li><span>Edge</span><b class="big">+9.5 pts</b></li><li><span>Cover chance</span><b>72%</b></li><li><span>VAN</span><b>#36 Vanderbilt · power -2.1</b></li><li><span>UGA</span><b>#5 Georgia · power 29.6</b></li></ul>
+        <p class="sub" style="margin-top:10px"><a onclick="go('why')" style="color:var(--blue);cursor:pointer">Read the full write-up →</a></p></details>
+      </article>
+
+   <h2>Season so far</h2>
+   <div class="tiles">
+     <div class="tile"><span>Spreads</span><b>0-0</b></div>
+     <div class="tile"><span>Totals</span><b>0-0</b></div>
+     <div class="tile"><span>Bets graded</span><b>0</b></div>
+     <div class="tile"><span>Model closer</span><b>64/160</b></div>
+   </div>
+ </section>
+
+ <section id="slate" class="view">
+   <h2>Full slate</h2>
+   <table><tr><th>Game</th><th class="n">Model<small>total</small></th><th class="n">Book<small>total</small></th><th class="n">Edge<small>total</small></th><th>Call</th></tr>
+      <tr class="" data-ph="0.2869">
+        <td><b>WKU @ NMSU</b><small>Thu 10/1
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">9.0<small>52.0</small></td>
+        <td class="n">-2.5<small>57.5</small></td>
+        <td class="n"><span class="big">-11.5</span>
+            <small class="">-5.5</small></td>
+        <td class="call"><span class="pill">WKU +2.5</span> </td>
+      </tr>
+      <tr class="" data-ph="0.4751">
+        <td><b>UNT @ TLSA</b><small>Thu 10/1
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">1.0<small>55.5</small></td>
+        <td class="n">-1.0<small>57.5</small></td>
+        <td class="n"><span class="">-2.0</span>
+            <small class="">-2.0</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.7131">
+        <td><b>PITT @ VT</b><small>Fri 10/2
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-9.0<small>51.5</small></td>
+        <td class="n">-3.5<small>54.5</small></td>
+        <td class="n"><span class="">+5.5</span>
+            <small class="">-3.0</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.4751">
+        <td><b>LIB @ DEL</b><small>Fri 10/2
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">1.0<small>52.5</small></td>
+        <td class="n">7.0<small>50.0</small></td>
+        <td class="n"><span class="">+6.0</span>
+            <small class="">+2.5</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.3196">
+        <td><b>PSU @ NU</b><small>Fri 10/2
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">7.5<small>52.5</small></td>
+        <td class="n">2.5<small>45.5</small></td>
+        <td class="n"><span class="">-5.0</span>
+            <small class="">+7.0</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.0374">
+        <td><b>ND @ UNC</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">28.5<small>50.5</small></td>
+        <td class="n">21.0<small>47.5</small></td>
+        <td class="n"><span class="">-7.5</span>
+            <small class="">+3.0</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.8488">
+        <td><b>STAN @ WAKE</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-16.5<small>48.0</small></td>
+        <td class="n">-13.0<small>53.5</small></td>
+        <td class="n"><span class="">+3.5</span>
+            <small class="">-5.5</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.8092">
+        <td><b>BC @ SMU</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-14.0<small>52.0</small></td>
+        <td class="n">-21.0<small>55.5</small></td>
+        <td class="n"><span class="">-7.0</span>
+            <small class="">-3.5</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.3309">
+        <td><b>SYR @ CONN</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">7.0<small>54.5</small></td>
+        <td class="n">6.5<small>50.5</small></td>
+        <td class="n"><span class="">-0.5</span>
+            <small class="">+4.0</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.3893">
+        <td><b>MICH @ MINN</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">4.5<small>49.5</small></td>
+        <td class="n">5.5<small>43.5</small></td>
+        <td class="n"><span class="">+1.0</span>
+            <small class="">+6.0</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.4751">
+        <td><b>NAVY @ AF</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">1.0<small>54.0</small></td>
+        <td class="n">-3.5<small>46.0</small></td>
+        <td class="n"><span class="">-4.5</span>
+            <small class="big">+8.0</small></td>
+        <td class="call"><span class="pill off">watch OVER 46.0</span> </td>
+      </tr>
+      <tr class="" data-ph="0.2976">
+        <td><b>ALA @ MSST</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">8.5<small>53.0</small></td>
+        <td class="n">6.0<small>60.5</small></td>
+        <td class="n"><span class="">-2.5</span>
+            <small class="">-7.5</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.6227">
+        <td><b>WVU @ ISU</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-5.0<small>53.0</small></td>
+        <td class="n">-3.5<small>53.0</small></td>
+        <td class="n"><span class="">+1.5</span>
+            <small class="">+0.0</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.6227">
+        <td><b>UCF @ HOU</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-5.0<small>53.0</small></td>
+        <td class="n">-12.0<small>51.5</small></td>
+        <td class="n"><span class="">-7.0</span>
+            <small class="">+1.5</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.8413">
+        <td><b>MTSU @ KU</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-16.0<small>54.0</small></td>
+        <td class="n">-18.5<small>49.5</small></td>
+        <td class="n"><span class="">-2.5</span>
+            <small class="">+4.5</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.7442">
+        <td><b>MSU @ WIS</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-10.5<small>51.0</small></td>
+        <td class="n">-10.0<small>43.5</small></td>
+        <td class="n"><span class="">+0.5</span>
+            <small class="">+7.5</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.9832">
+        <td><b>VAN @ UGA</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-34.0<small>53.5</small></td>
+        <td class="n">-24.5<small>51.0</small></td>
+        <td class="n"><span class="big">+9.5</span>
+            <small class="">+2.5</small></td>
+        <td class="call"><span class="pill">UGA -24.5</span> </td>
+      </tr>
+      <tr class="" data-ph="0.5987">
+        <td><b>WMU @ BUF</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-4.0<small>48.5</small></td>
+        <td class="n">13.5<small>46.5</small></td>
+        <td class="n"><span class="big">+17.5</span>
+            <small class="">+2.0</small></td>
+        <td class="call"><span class="pill">BUF +13.5</span> </td>
+      </tr>
+      <tr class="" data-ph="0.2459">
+        <td><b>TOL @ BALL</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">11.0<small>52.0</small></td>
+        <td class="n">19.5<small>52.0</small></td>
+        <td class="n"><span class="big">+8.5</span>
+            <small class="">+0.0</small></td>
+        <td class="call"><span class="pill off">watch BALL +19.5</span> </td>
+      </tr>
+      <tr class="" data-ph="0.4134">
+        <td><b>EMU @ MASS</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">3.5<small>51.0</small></td>
+        <td class="n">-6.5<small>48.5</small></td>
+        <td class="n"><span class="big">-10.0</span>
+            <small class="">+2.5</small></td>
+        <td class="call"><span class="pill">EMU +6.5</span> </td>
+      </tr>
+      <tr class="" data-ph="0.8488">
+        <td><b>AUB @ TENN</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-16.5<small>58.5</small></td>
+        <td class="n">-7.0<small>54.5</small></td>
+        <td class="n"><span class="big">+9.5</span>
+            <small class="">+4.0</small></td>
+        <td class="call"><span class="pill off">watch TENN -7.0</span> </td>
+      </tr>
+      <tr class="" data-ph="0.7917">
+        <td><b>BGSU @ MOH</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-13.0<small>49.0</small></td>
+        <td class="n">-13.5<small>43.5</small></td>
+        <td class="n"><span class="">-0.5</span>
+            <small class="">+5.5</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.2976">
+        <td><b>MEM @ CLT</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">8.5<small>51.0</small></td>
+        <td class="n">20.5<small>53.0</small></td>
+        <td class="n"><span class="big">+12.0</span>
+            <small class="">-2.0</small></td>
+        <td class="call"><span class="pill">CLT +20.5</span> </td>
+      </tr>
+      <tr class="" data-ph="0.1238">
+        <td><b>OSU @ IOWA</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">18.5<small>50.5</small></td>
+        <td class="n">14.5<small>45.5</small></td>
+        <td class="n"><span class="">-4.0</span>
+            <small class="">+5.0</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.8006">
+        <td><b>AKR @ CMU</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-13.5<small>50.5</small></td>
+        <td class="n">-6.5<small>47.0</small></td>
+        <td class="n"><span class="">+7.0</span>
+            <small class="">+3.5</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.7827">
+        <td><b>UVA @ FSU</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-12.5<small>52.0</small></td>
+        <td class="n">2.5<small>51.5</small></td>
+        <td class="n"><span class="big">+15.0</span>
+            <small class="">+0.5</small></td>
+        <td class="call"><span class="pill">FSU +2.5</span> </td>
+      </tr>
+      <tr class="" data-ph="0.8560">
+        <td><b>WYO @ NDSU</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-17.0<small>49.5</small></td>
+        <td class="n">-18.5<small>45.5</small></td>
+        <td class="n"><span class="">-1.5</span>
+            <small class="">+4.0</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.4751">
+        <td><b>OHIO @ KENT</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">1.0<small>50.0</small></td>
+        <td class="n">3.0<small>50.5</small></td>
+        <td class="n"><span class="">+2.0</span>
+            <small class="">-0.5</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.6462">
+        <td><b>ODU @ GAST</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-6.0<small>56.0</small></td>
+        <td class="n">-2.5<small>51.5</small></td>
+        <td class="n"><span class="">+3.5</span>
+            <small class="">+4.5</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.4751">
+        <td><b>CAL @ UNLV</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">1.0<small>53.5</small></td>
+        <td class="n">-2.5<small>53.0</small></td>
+        <td class="n"><span class="">-3.5</span>
+            <small class="">+0.5</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.4627">
+        <td><b>FLA @ MIZ</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">1.5<small>54.5</small></td>
+        <td class="n">5.5<small>57.0</small></td>
+        <td class="n"><span class="">+4.0</span>
+            <small class="">-2.5</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.3538">
+        <td><b>LOU @ NCSU</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">6.0<small>52.5</small></td>
+        <td class="n">3.5<small>58.5</small></td>
+        <td class="n"><span class="">-2.5</span>
+            <small class="">-6.0</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.8176">
+        <td><b>MRSH @ JMU</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-14.5<small>52.0</small></td>
+        <td class="n">-18.5<small>56.0</small></td>
+        <td class="n"><span class="">-4.0</span>
+            <small class="">-4.0</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.7827">
+        <td><b>MD @ NEB</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-12.5<small>50.5</small></td>
+        <td class="n">-14.5<small>52.5</small></td>
+        <td class="n"><span class="">-2.0</span>
+            <small class="">-2.0</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.9626">
+        <td><b>UTEP @ UNM</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-28.5<small>51.5</small></td>
+        <td class="n">-22.5<small>48.5</small></td>
+        <td class="n"><span class="">+6.0</span>
+            <small class="">+3.0</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.8762">
+        <td><b>PUR @ ILL</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-18.5<small>54.0</small></td>
+        <td class="n">-10.0<small>61.5</small></td>
+        <td class="n"><span class="big">+8.5</span>
+            <small class="">-7.5</small></td>
+        <td class="call"><span class="pill off">watch ILL -10.0</span> </td>
+      </tr>
+      <tr class="" data-ph="0.6345">
+        <td><b>UK @ SC</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-5.5<small>55.0</small></td>
+        <td class="n">-3.0<small>53.5</small></td>
+        <td class="n"><span class="">+2.5</span>
+            <small class="">+1.5</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.4751">
+        <td><b>ORST @ CSU</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">1.0<small>49.5</small></td>
+        <td class="n">6.5<small>62.0</small></td>
+        <td class="n"><span class="">+5.5</span>
+            <small class="big">-12.5</small></td>
+        <td class="call"><span class="pill">UNDER 62.0</span> </td>
+      </tr>
+      <tr class="" data-ph="0.3893">
+        <td><b>GASO @ CCU</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">4.5<small>52.5</small></td>
+        <td class="n">2.5<small>54.0</small></td>
+        <td class="n"><span class="">-2.0</span>
+            <small class="">-1.5</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.8413">
+        <td><b>ARK @ TA&M</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-16.0<small>55.0</small></td>
+        <td class="n">-14.0<small>50.5</small></td>
+        <td class="n"><span class="">+2.0</span>
+            <small class="">+4.5</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.3196">
+        <td><b>BYU @ TCU</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">7.5<small>50.5</small></td>
+        <td class="n">6.5<small>47.5</small></td>
+        <td class="n"><span class="">-1.0</span>
+            <small class="">+3.0</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.2083">
+        <td><b>UTSA @ RICE</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">13.0<small>52.0</small></td>
+        <td class="n">11.5<small>56.0</small></td>
+        <td class="n"><span class="">-1.5</span>
+            <small class="">-4.0</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.8337">
+        <td><b>ULM @ USA</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-15.5<small>52.5</small></td>
+        <td class="n">-14.0<small>57.0</small></td>
+        <td class="n"><span class="">+1.5</span>
+            <small class="">-4.5</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.7131">
+        <td><b>TEM @ USF</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-9.0<small>52.0</small></td>
+        <td class="n">-6.5<small>48.5</small></td>
+        <td class="n"><span class="">+2.5</span>
+            <small class="">+3.5</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.4379">
+        <td><b>ARMY @ LT</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">2.5<small>51.5</small></td>
+        <td class="n">2.2<small>47.5</small></td>
+        <td class="n"><span class="">-0.2</span>
+            <small class="">+4.0</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.0629">
+        <td><b>TTU @ COLO</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">24.5<small>53.0</small></td>
+        <td class="n">12.5<small>50.5</small></td>
+        <td class="n"><span class="big">-12.0</span>
+            <small class="">+2.5</small></td>
+        <td class="call"><span class="pill">TTU -12.5</span> </td>
+      </tr>
+      <tr class="" data-ph="0.1115">
+        <td><b>MIA @ CLEM</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">19.5<small>51.0</small></td>
+        <td class="n">16.5<small>48.0</small></td>
+        <td class="n"><span class="">-3.0</span>
+            <small class="">+3.0</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.7827">
+        <td><b>WASH @ USC</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-12.5<small>54.0</small></td>
+        <td class="n">-9.5<small>58.5</small></td>
+        <td class="n"><span class="">+3.0</span>
+            <small class="">-4.5</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.8697">
+        <td><b>USU @ BOIS</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-18.0<small>55.5</small></td>
+        <td class="n">-20.5<small>51.5</small></td>
+        <td class="n"><span class="">-2.5</span>
+            <small class="">+4.0</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.7131">
+        <td><b>ARST @ UL</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-9.0<small>52.5</small></td>
+        <td class="n">-6.5<small>47.5</small></td>
+        <td class="n"><span class="">+2.5</span>
+            <small class="">+5.0</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.1303">
+        <td><b>IU @ RUTG</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">18.0<small>53.0</small></td>
+        <td class="n">24.0<small>56.0</small></td>
+        <td class="n"><span class="">+6.0</span>
+            <small class="">-3.0</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.3655">
+        <td><b>FRES @ WSU</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">5.5<small>50.5</small></td>
+        <td class="n">-2.5<small>45.5</small></td>
+        <td class="n"><span class="big">-8.0</span>
+            <small class="">+5.0</small></td>
+        <td class="call"><span class="pill off">watch FRES +2.5</span> </td>
+      </tr>
+      <tr class="" data-ph="0.5373">
+        <td><b>TXST @ SDSU</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-1.5<small>54.5</small></td>
+        <td class="n">4.5<small>59.5</small></td>
+        <td class="n"><span class="">+6.0</span>
+            <small class="">-5.0</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.6804">
+        <td><b>BAY @ ASU</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-7.5<small>54.0</small></td>
+        <td class="n">-4.0<small>49.0</small></td>
+        <td class="n"><span class="">+3.5</span>
+            <small class="">+5.0</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.7024">
+        <td><b>CIN @ ARIZ</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-8.5<small>52.0</small></td>
+        <td class="n">-7.0<small>55.5</small></td>
+        <td class="n"><span class="">+1.5</span>
+            <small class="">-3.5</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+      <tr class="" data-ph="0.6691">
+        <td><b>SJSU @ HAW</b><small>Sat 10/3
+            <em class="clock" data-k="0"></em></small></td>
+        <td class="n">-7.0<small>53.0</small></td>
+        <td class="n">-3.0<small>51.5</small></td>
+        <td class="n"><span class="">+4.0</span>
+            <small class="">+1.5</small></td>
+        <td class="call"><span class="pill off">—</span></td>
+      </tr>
+   </table>
+   <h2>Rating moves</h2>
+   <table><tr><th>Team</th><th class="n">Power</th><th class="n">Move</th></tr>
+      <tr><td><b>UGA</b><small>Georgia</small></td>
+        <td class="n">26.6 → 29.6</td>
+        <td class="n up">+3.0</td></tr>
+      <tr><td><b>OU</b><small>Oklahoma</small></td>
+        <td class="n">15.3 → 12.3</td>
+        <td class="n dn">-3.0</td></tr>
+      <tr><td><b>ND</b><small>Notre Dame</small></td>
+        <td class="n">21.1 → 24.1</td>
+        <td class="n up">+3.0</td></tr>
+      <tr><td><b>TA&M</b><small>Texas A&amp;M</small></td>
+        <td class="n">18.0 → 15.0</td>
+        <td class="n dn">-3.0</td></tr>
+      <tr><td><b>ALA</b><small>Alabama</small></td>
+        <td class="n">18.5 → 21.5</td>
+        <td class="n up">+3.0</td></tr>
+      <tr><td><b>LSU</b><small>LSU</small></td>
+        <td class="n">12.9 → 15.9</td>
+        <td class="n up">+3.0</td></tr>
+      <tr><td><b>SC</b><small>South Carolina</small></td>
+        <td class="n">5.3 → 2.3</td>
+        <td class="n dn">-3.0</td></tr>
+      <tr><td><b>MISS</b><small>Ole Miss</small></td>
+        <td class="n">12.8 → 9.8</td>
+        <td class="n dn">-3.0</td></tr>
+      <tr><td><b>PSU</b><small>Penn State</small></td>
+        <td class="n">11.7 → 8.7</td>
+        <td class="n dn">-3.0</td></tr>
+      <tr><td><b>FLA</b><small>Florida</small></td>
+        <td class="n">9.7 → 12.7</td>
+        <td class="n up">+3.0</td></tr>
+      <tr><td><b>VT</b><small>Virginia Tech</small></td>
+        <td class="n">11.7 → 8.7</td>
+        <td class="n dn">-3.0</td></tr>
+      <tr><td><b>KSU</b><small>Kansas State</small></td>
+        <td class="n">4.4 → 1.4</td>
+        <td class="n dn">-3.0</td></tr>
+      <tr><td><b>SMU</b><small>SMU</small></td>
+        <td class="n">3.3 → 0.3</td>
+        <td class="n dn">-3.0</td></tr>
+      <tr><td><b>NEB</b><small>Nebraska</small></td>
+        <td class="n">7.3 → 10.3</td>
+        <td class="n up">+3.0</td></tr>
+      <tr><td><b>LOU</b><small>Louisville</small></td>
+        <td class="n">6.4 → 3.4</td>
+        <td class="n dn">-3.0</td></tr>
+      <tr><td><b>MD</b><small>Maryland</small></td>
+        <td class="n">3.4 → 0.4</td>
+        <td class="n dn">-3.0</td></tr>
+      <tr><td><b>OKST</b><small>Oklahoma State</small></td>
+        <td class="n">6.6 → 9.6</td>
+        <td class="n up">+3.0</td></tr>
+      <tr><td><b>WAKE</b><small>Wake Forest</small></td>
+        <td class="n">-0.4 → 2.6</td>
+        <td class="n up">+3.0</td></tr>
+      <tr><td><b>UVA</b><small>Virginia</small></td>
+        <td class="n">-4.2 → -1.2</td>
+        <td class="n up">+3.0</td></tr>
+      <tr><td><b>WVU</b><small>West Virginia</small></td>
+        <td class="n">0.8 → -2.2</td>
+        <td class="n dn">-3.0</td></tr>
+      <tr><td><b>WIS</b><small>Wisconsin</small></td>
+        <td class="n">0.5 → 3.5</td>
+        <td class="n up">+3.0</td></tr>
+      <tr><td><b>SDSU</b><small>San Diego State</small></td>
+        <td class="n">-8.8 → -11.8</td>
+        <td class="n dn">-3.0</td></tr>
+      <tr><td><b>ODU</b><small>Old Dominion</small></td>
+        <td class="n">-8.5 → -11.5</td>
+        <td class="n dn">-3.0</td></tr>
+      <tr><td><b>UCLA</b><small>UCLA</small></td>
+        <td class="n">1.1 → 4.1</td>
+        <td class="n up">+3.0</td></tr>
+      <tr><td><b>GT</b><small>Georgia Tech</small></td>
+        <td class="n">-5.4 → -8.4</td>
+        <td class="n dn">-3.0</td></tr>
+   </table>
+   <p class="sub" style="margin-top:10px">Spreads are quoted from the home side, like the NFL page. Rating moves are how much each team's power rating changed after last week's results.</p>
+ </section>
+
+ <section id="record" class="view">
+   <h2>Units over time</h2>
+   <p class="sub">The units chart starts once a couple of picks are graded.</p>
+   <p class="sub" style="margin-top:10px">Before the 8-bet card (weeks 2–4, every flagged play): 26-22-1, +2.4u. The record above counts only card bets from week 5 on.</p>
+   <h2>Week by week</h2>
+   <table><tr><th>Week</th><th class="n">Record</th><th class="n">Units</th><th></th></tr>
+
+   </table>
+   <h2>Model vs the market</h2>
+   <div class="tiles">
+     <div class="tile"><span>Games</span><b>160</b></div>
+     <div class="tile"><span>Model miss</span><b>11.97</b></div>
+     <div class="tile"><span>Book miss</span><b>10.59</b></div>
+     <div class="tile"><span>Model closer</span><b>64/160</b></div>
+   </div>
+ </section>
+
+ <section id="why" class="view">
+   <h2>Why we like it</h2>
+   <p class="sub" style="margin-bottom:14px">Every game on the slate, explained from the same numbers the model uses. Plays are open by default.</p>
+   <details class="exp" open>
+   <summary><b>WKU @ NMSU</b> <span class="pill">WKU +2.5</span> 
+   <small>Thu 10/1 · model 9.0 / 52.0</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>New Mexico State rate 11.3 points worse than Western Kentucky on a neutral field (Conference USA vs Conference USA). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model +9.0 from the home side, book -2.5 — 11.5 points apart.</p></li><li><span>The total</span><p>Model 52.0 against 57.5. Team leans: Western Kentucky +0.0, New Mexico State -0.5.</p></li><li><span>Rating moves</span><p>Western Kentucky -12.4 → -10.6 · New Mexico State -20.3 → -21.9</p></li><li><span>The bet</span><p>WKU +2.5 — strong, 2u, covers 76% by the model</p></li></ul></details>
+   <details class="exp">
+   <summary><b>UNT @ TLSA</b> <span class="pill off">NO PLAY</span>
+   <small>Thu 10/1 · model 1.0 / 55.5</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Tulsa rate 3.4 points worse than North Texas on a neutral field (American vs American). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model +1.0 from the home side, book -1.0 — 2.0 points apart.</p></li><li><span>The total</span><p>Model 55.5 against 57.5. Team leans: North Texas +0.5, Tulsa +2.3.</p></li><li><span>Rating moves</span><p>North Texas -19.0 → -16.0 · Tulsa -17.2 → -19.4</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>PITT @ VT</b> <span class="pill off">NO PLAY</span>
+   <small>Fri 10/2 · model -9.0 / 51.5</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Virginia Tech rate 6.7 points better than Pittsburgh on a neutral field (ACC vs ACC). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -9.0 from the home side, book -3.5 — 5.5 points apart.</p></li><li><span>The total</span><p>Model 51.5 against 54.5. Team leans: Pittsburgh -1.2, Virginia Tech +0.0.</p></li><li><span>Rating moves</span><p>Virginia Tech 11.7 → 8.7</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>LIB @ DEL</b> <span class="pill off">NO PLAY</span>
+   <small>Fri 10/2 · model 1.0 / 52.5</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Delaware rate 3.5 points worse than Liberty on a neutral field (Conference USA vs Conference USA). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model +1.0 from the home side, book +7.0 — 6.0 points apart.</p></li><li><span>The total</span><p>Model 52.5 against 50.0. Team leans: Liberty -0.5, Delaware +0.5.</p></li><li><span>Rating moves</span><p>Delaware -11.4 → -14.4</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>PSU @ NU</b> <span class="pill off">NO PLAY</span>
+   <small>Fri 10/2 · model 7.5 / 52.5</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Northwestern rate 9.9 points worse than Penn State on a neutral field (Big Ten vs Big Ten). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model +7.5 from the home side, book +2.5 — 5.0 points apart.</p></li><li><span>The total</span><p>Model 52.5 against 45.5. Team leans: Penn State +0.2, Northwestern +0.0.</p></li><li><span>Rating moves</span><p>Penn State 11.7 → 8.7</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>ND @ UNC</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model 28.5 / 50.5</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>North Carolina rate 31.2 points worse than Notre Dame on a neutral field (Independent vs ACC). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model +28.5 from the home side, book +21.0 — 7.5 points apart.</p></li><li><span>The total</span><p>Model 50.5 against 47.5. Team leans: Notre Dame +0.0, North Carolina -2.2.</p></li><li><span>Rating moves</span><p>Notre Dame 21.1 → 24.1</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>STAN @ WAKE</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model -16.5 / 48.0</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Wake Forest rate 14.0 points better than Stanford on a neutral field (ACC vs ACC). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -16.5 from the home side, book -13.0 — 3.5 points apart.</p></li><li><span>The total</span><p>Model 48.0 against 53.5. Team leans: Stanford -2.8, Wake Forest -1.8.</p></li><li><span>Rating moves</span><p>Wake Forest -0.4 → 2.6 · Stanford -14.4 → -11.4</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>BC @ SMU</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model -14.0 / 52.0</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>SMU rate 11.6 points better than Boston College on a neutral field (ACC vs ACC). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -14.0 from the home side, book -21.0 — 7.0 points apart.</p></li><li><span>The total</span><p>Model 52.0 against 55.5. Team leans: Boston College -0.5, SMU +0.0.</p></li><li><span>Rating moves</span><p>SMU 3.3 → 0.3 · Boston College -14.3 → -11.3</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>SYR @ CONN</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model 7.0 / 54.5</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>UConn rate 9.5 points worse than Syracuse on a neutral field (ACC vs Independent). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model +7.0 from the home side, book +6.5 — 0.5 points apart.</p></li><li><span>The total</span><p>Model 54.5 against 50.5. Team leans: Syracuse +0.5, UConn +1.5.</p></li><li><span>Rating moves</span><p>UConn -14.6 → -14.1</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>MICH @ MINN</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model 4.5 / 49.5</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Minnesota rate 6.9 points worse than Michigan on a neutral field (Big Ten vs Big Ten). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model +4.5 from the home side, book +5.5 — 1.0 points apart.</p></li><li><span>The total</span><p>Model 49.5 against 43.5. Team leans: Michigan -2.2, Minnesota -0.8.</p></li><li><span>Rating moves</span><p>Michigan 14.1 → 11.6 · Minnesota 2.6 → 4.7</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>NAVY @ AF</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model 1.0 / 54.0</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Air Force rate 3.4 points worse than Navy on a neutral field (American vs Mountain West). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model +1.0 from the home side, book -3.5 — 4.5 points apart.</p></li><li><span>The total</span><p>Model 54.0 against 46.0. Team leans: Navy -0.2, Air Force +1.5.</p></li><li><span>Rating moves</span><p>Air Force -8.5 → -9.5</p></li><li><span>Not on the card</span><p>OVER 46.0 has a solid edge but didn't make this week's top 8.</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>ALA @ MSST</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model 8.5 / 53.0</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Mississippi State rate 11.1 points worse than Alabama on a neutral field (SEC vs SEC). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model +8.5 from the home side, book +6.0 — 2.5 points apart.</p></li><li><span>The total</span><p>Model 53.0 against 60.5. Team leans: Alabama +0.2, Mississippi State +0.5.</p></li><li><span>Rating moves</span><p>Alabama 18.5 → 21.5 · Mississippi State 8.9 → 10.4</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>WVU @ ISU</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model -5.0 / 53.0</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Iowa State rate 2.6 points better than West Virginia on a neutral field (Big 12 vs Big 12). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -5.0 from the home side, book -3.5 — 1.5 points apart.</p></li><li><span>The total</span><p>Model 53.0 against 53.0. Team leans: West Virginia +0.8, Iowa State -0.2.</p></li><li><span>Rating moves</span><p>West Virginia 0.8 → -2.2 · Iowa State 1.9 → 0.4</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>UCF @ HOU</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model -5.0 / 53.0</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Houston rate 2.5 points better than UCF on a neutral field (Big 12 vs Big 12). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -5.0 from the home side, book -12.0 — 7.0 points apart.</p></li><li><span>The total</span><p>Model 53.0 against 51.5. Team leans: UCF +1.8, Houston -1.2.</p></li><li><span>Rating moves</span><p>UCF 0.7 → 2.5 · Houston 5.1 → 5.0</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>MTSU @ KU</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model -16.0 / 54.0</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Kansas rate 13.7 points better than Middle Tennessee on a neutral field (Conference USA vs Big 12). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -16.0 from the home side, book -18.5 — 2.5 points apart.</p></li><li><span>The total</span><p>Model 54.0 against 49.5. Team leans: Middle Tennessee +1.8, Kansas -0.2.</p></li><li><span>Rating moves</span><p>Middle Tennessee -15.4 → -16.2</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>MSU @ WIS</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model -10.5 / 51.0</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Wisconsin rate 7.9 points better than Michigan State on a neutral field (Big Ten vs Big Ten). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -10.5 from the home side, book -10.0 — 0.5 points apart.</p></li><li><span>The total</span><p>Model 51.0 against 43.5. Team leans: Michigan State -1.5, Wisconsin +0.0.</p></li><li><span>Rating moves</span><p>Wisconsin 0.5 → 3.5 · Michigan State -1.4 → -4.4</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp" open>
+   <summary><b>VAN @ UGA</b> <span class="pill">UGA -24.5</span> 
+   <small>Sat 10/3 · model -34.0 / 53.5</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Georgia rate 31.7 points better than Vanderbilt on a neutral field (SEC vs SEC). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -34.0 from the home side, book -24.5 — 9.5 points apart.</p></li><li><span>The total</span><p>Model 53.5 against 51.0. Team leans: Vanderbilt +0.0, Georgia +0.8.</p></li><li><span>Rating moves</span><p>Georgia 26.6 → 29.6 · Vanderbilt -2.5 → -2.1</p></li><li><span>The bet</span><p>UGA -24.5 — solid, 1u, covers 72% by the model</p></li></ul></details>
+   <details class="exp" open>
+   <summary><b>WMU @ BUF</b> <span class="pill">BUF +13.5</span> 
+   <small>Sat 10/3 · model -4.0 / 48.5</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Buffalo rate 1.5 points better than Western Michigan on a neutral field (MAC vs MAC). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -4.0 from the home side, book +13.5 — 17.5 points apart.</p></li><li><span>The total</span><p>Model 48.5 against 46.5. Team leans: Western Michigan -2.2, Buffalo -1.8.</p></li><li><span>Rating moves</span><p>Western Michigan -15.0 → -17.8</p></li><li><span>The bet</span><p>BUF +13.5 — max, 3u, covers 86% by the model</p></li></ul></details>
+   <details class="exp">
+   <summary><b>TOL @ BALL</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model 11.0 / 52.0</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Ball State rate 13.3 points worse than Toledo on a neutral field (MAC vs MAC). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model +11.0 from the home side, book +19.5 — 8.5 points apart.</p></li><li><span>The total</span><p>Model 52.0 against 52.0. Team leans: Toledo -1.5, Ball State +0.8.</p></li><li><span>Rating moves</span><p>Toledo -15.8 → -12.8 · Ball State -23.1 → -26.1</p></li><li><span>Not on the card</span><p>BALL +19.5 has a solid edge but didn't make this week's top 8.</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp" open>
+   <summary><b>EMU @ MASS</b> <span class="pill">EMU +6.5</span> 
+   <small>Sat 10/3 · model 3.5 / 51.0</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>UMass rate 6.0 points worse than Eastern Michigan on a neutral field (MAC vs MAC). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model +3.5 from the home side, book -6.5 — 10.0 points apart.</p></li><li><span>The total</span><p>Model 51.0 against 48.5. Team leans: Eastern Michigan -1.3, UMass -0.2.</p></li><li><span>Rating moves</span><p>UMass -28.1 → -25.1</p></li><li><span>The bet</span><p>EMU +6.5 — solid, 1u, covers 73% by the model</p></li></ul></details>
+   <details class="exp">
+   <summary><b>AUB @ TENN</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model -16.5 / 58.5</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Tennessee rate 14.2 points better than Auburn on a neutral field (SEC vs SEC). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -16.5 from the home side, book -7.0 — 9.5 points apart.</p></li><li><span>The total</span><p>Model 58.5 against 54.5. Team leans: Auburn +1.7, Tennessee +4.3.</p></li><li><span>Rating moves</span><p>Tennessee 15.8 → 16.3 · Auburn 2.5 → 2.1</p></li><li><span>Not on the card</span><p>TENN -7.0 has a solid edge but didn't make this week's top 8.</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>BGSU @ MOH</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model -13.0 / 49.0</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Miami (OH) rate 10.3 points better than Bowling Green on a neutral field (MAC vs MAC). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -13.0 from the home side, book -13.5 — 0.5 points apart.</p></li><li><span>The total</span><p>Model 49.0 against 43.5. Team leans: Bowling Green -2.2, Miami (OH) -1.2.</p></li><li><span>Rating moves</span><p>Bowling Green -25.2 → -22.8 · Miami (OH) -12.0 → -12.5</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp" open>
+   <summary><b>MEM @ CLT</b> <span class="pill">CLT +20.5</span> 
+   <small>Sat 10/3 · model 8.5 / 51.0</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Charlotte rate 11.1 points worse than Memphis on a neutral field (American vs American). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model +8.5 from the home side, book +20.5 — 12.0 points apart.</p></li><li><span>The total</span><p>Model 51.0 against 53.0. Team leans: Memphis +1.0, Charlotte -2.5.</p></li><li><span>Rating moves</span><p>Charlotte -18.5 → -21.5</p></li><li><span>The bet</span><p>CLT +20.5 — strong, 2u, covers 77% by the model</p></li></ul></details>
+   <details class="exp">
+   <summary><b>OSU @ IOWA</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model 18.5 / 50.5</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Iowa rate 21.0 points worse than Ohio State on a neutral field (Big Ten vs Big Ten). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model +18.5 from the home side, book +14.5 — 4.0 points apart.</p></li><li><span>The total</span><p>Model 50.5 against 45.5. Team leans: Ohio State +0.8, Iowa -2.8.</p></li><li><span>Rating moves</span><p>Iowa 7.4 → 9.9 · Ohio State 33.0 → 30.9</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>AKR @ CMU</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model -13.5 / 50.5</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Central Michigan rate 10.8 points better than Akron on a neutral field (MAC vs MAC). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -13.5 from the home side, book -6.5 — 7.0 points apart.</p></li><li><span>The total</span><p>Model 50.5 against 47.0. Team leans: Akron -1.8, Central Michigan +0.0.</p></li><li><span>Rating moves</span><p>Akron -25.4 → -28.4 · Central Michigan -14.7 → -17.6</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp" open>
+   <summary><b>UVA @ FSU</b> <span class="pill">FSU +2.5</span> 
+   <small>Sat 10/3 · model -12.5 / 52.0</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Florida State rate 9.9 points better than Virginia on a neutral field (ACC vs ACC). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -12.5 from the home side, book +2.5 — 15.0 points apart.</p></li><li><span>The total</span><p>Model 52.0 against 51.5. Team leans: Virginia -0.2, Florida State -0.5.</p></li><li><span>Rating moves</span><p>Virginia -4.2 → -1.2</p></li><li><span>The bet</span><p>FSU +2.5 — max, 3u, covers 83% by the model</p></li></ul></details>
+   <details class="exp">
+   <summary><b>WYO @ NDSU</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model -17.0 / 49.5</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>North Dakota State rate 14.3 points better than Wyoming on a neutral field (Mountain West vs Independent). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -17.0 from the home side, book -18.5 — 1.5 points apart.</p></li><li><span>The total</span><p>Model 49.5 against 45.5. Team leans: Wyoming -2.0, North Dakota State -1.2.</p></li><li><span>Rating moves</span><p>Wyoming -17.8 → -14.8</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>OHIO @ KENT</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model 1.0 / 50.0</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Kent State rate 3.5 points worse than Ohio on a neutral field (MAC vs MAC). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model +1.0 from the home side, book +3.0 — 2.0 points apart.</p></li><li><span>The total</span><p>Model 50.0 against 50.5. Team leans: Ohio -2.2, Kent State -0.2.</p></li><li><span>Rating moves</span><p>Kent State -24.5 → -21.5</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>ODU @ GAST</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model -6.0 / 56.0</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Georgia State rate 3.4 points better than Old Dominion on a neutral field (Sun Belt vs Sun Belt). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -6.0 from the home side, book -2.5 — 3.5 points apart.</p></li><li><span>The total</span><p>Model 56.0 against 51.5. Team leans: Old Dominion +0.5, Georgia State +3.2.</p></li><li><span>Rating moves</span><p>Old Dominion -8.5 → -11.5 · Georgia State -9.8 → -8.1</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>CAL @ UNLV</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model 1.0 / 53.5</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>UNLV rate 3.6 points worse than California on a neutral field (ACC vs Mountain West). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model +1.0 from the home side, book -2.5 — 3.5 points apart.</p></li><li><span>The total</span><p>Model 53.5 against 53.0. Team leans: California +0.0, UNLV +0.8.</p></li><li><span>Rating moves</span><p>UNLV -9.7 → -6.7</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>FLA @ MIZ</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model 1.5 / 54.5</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Missouri rate 3.9 points worse than Florida on a neutral field (SEC vs SEC). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model +1.5 from the home side, book +5.5 — 4.0 points apart.</p></li><li><span>The total</span><p>Model 54.5 against 57.0. Team leans: Florida +0.0, Missouri +2.2.</p></li><li><span>Rating moves</span><p>Florida 9.7 → 12.7 · Missouri 10.3 → 8.8</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>LOU @ NCSU</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model 6.0 / 52.5</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>NC State rate 8.4 points worse than Louisville on a neutral field (ACC vs ACC). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model +6.0 from the home side, book +3.5 — 2.5 points apart.</p></li><li><span>The total</span><p>Model 52.5 against 58.5. Team leans: Louisville +0.0, NC State -0.2.</p></li><li><span>Rating moves</span><p>Louisville 6.4 → 3.4 · NC State -4.5 → -5.0</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>MRSH @ JMU</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model -14.5 / 52.0</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>James Madison rate 12.1 points better than Marshall on a neutral field (Sun Belt vs Sun Belt). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -14.5 from the home side, book -18.5 — 4.0 points apart.</p></li><li><span>The total</span><p>Model 52.0 against 56.0. Team leans: Marshall +0.2, James Madison -0.5.</p></li><li><span>Rating moves</span><p>James Madison -6.5 → -3.5</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>MD @ NEB</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model -12.5 / 50.5</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Nebraska rate 9.9 points better than Maryland on a neutral field (Big Ten vs Big Ten). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -12.5 from the home side, book -14.5 — 2.0 points apart.</p></li><li><span>The total</span><p>Model 50.5 against 52.5. Team leans: Maryland +0.0, Nebraska -2.2.</p></li><li><span>Rating moves</span><p>Nebraska 7.3 → 10.3 · Maryland 3.4 → 0.4</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>UTEP @ UNM</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model -28.5 / 51.5</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>New Mexico rate 26.2 points better than UTEP on a neutral field (Mountain West vs Mountain West). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -28.5 from the home side, book -22.5 — 6.0 points apart.</p></li><li><span>The total</span><p>Model 51.5 against 48.5. Team leans: UTEP -1.2, New Mexico +0.0.</p></li><li><span>Rating moves</span><p>UTEP -22.0 → -25.0 · New Mexico -0.4 → 1.2</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>PUR @ ILL</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model -18.5 / 54.0</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Illinois rate 16.1 points better than Purdue on a neutral field (Big Ten vs Big Ten). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -18.5 from the home side, book -10.0 — 8.5 points apart.</p></li><li><span>The total</span><p>Model 54.0 against 61.5. Team leans: Purdue +0.8, Illinois +0.8.</p></li><li><span>Rating moves</span><p>Purdue -6.9 → -9.9 · Illinois 4.1 → 6.2</p></li><li><span>Not on the card</span><p>ILL -10.0 has a solid edge but didn't make this week's top 8.</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>UK @ SC</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model -5.5 / 55.0</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>South Carolina rate 3.1 points better than Kentucky on a neutral field (SEC vs SEC). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -5.5 from the home side, book -3.0 — 2.5 points apart.</p></li><li><span>The total</span><p>Model 55.0 against 53.5. Team leans: Kentucky +2.8, South Carolina -0.2.</p></li><li><span>Rating moves</span><p>South Carolina 5.3 → 2.3 · Kentucky -3.0 → -0.8</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp" open>
+   <summary><b>ORST @ CSU</b> <span class="pill">UNDER 62.0</span> 
+   <small>Sat 10/3 · model 1.0 / 49.5</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Colorado State rate 3.3 points worse than Oregon State on a neutral field (Pac-12 vs Pac-12). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model +1.0 from the home side, book +6.5 — 5.5 points apart.</p></li><li><span>The total</span><p>Model 49.5 against 62.0. Team leans: Oregon State -1.2, Colorado State -2.0.</p></li><li><span>Rating moves</span><p>Oregon State -12.8 → -9.8 · Colorado State -12.4 → -13.1</p></li><li><span>The bet</span><p>UNDER 62.0 — strong, 2u, covers 80% by the model</p></li></ul></details>
+   <details class="exp">
+   <summary><b>GASO @ CCU</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model 4.5 / 52.5</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Coastal Carolina rate 7.1 points worse than Georgia Southern on a neutral field (Sun Belt vs Sun Belt). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model +4.5 from the home side, book +2.5 — 2.0 points apart.</p></li><li><span>The total</span><p>Model 52.5 against 54.0. Team leans: Georgia Southern -0.8, Coastal Carolina +0.8.</p></li><li><span>Rating moves</span><p>Georgia Southern -11.9 → -11.8</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>ARK @ TA&M</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model -16.0 / 55.0</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Texas A&amp;M rate 13.5 points better than Arkansas on a neutral field (SEC vs SEC). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -16.0 from the home side, book -14.0 — 2.0 points apart.</p></li><li><span>The total</span><p>Model 55.0 against 50.5. Team leans: Arkansas +3.2, Texas A&amp;M -0.5.</p></li><li><span>Rating moves</span><p>Texas A&amp;M 18.0 → 15.0 · Arkansas -0.7 → 1.5</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>BYU @ TCU</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model 7.5 / 50.5</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>TCU rate 9.9 points worse than BYU on a neutral field (Big 12 vs Big 12). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model +7.5 from the home side, book +6.5 — 1.0 points apart.</p></li><li><span>The total</span><p>Model 50.5 against 47.5. Team leans: BYU +0.0, TCU -2.2.</p></li><li><span>Rating moves</span><p>TCU 2.5 → 0.7</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>UTSA @ RICE</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model 13.0 / 52.0</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Rice rate 15.3 points worse than UTSA on a neutral field (American vs American). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model +13.0 from the home side, book +11.5 — 1.5 points apart.</p></li><li><span>The total</span><p>Model 52.0 against 56.0. Team leans: UTSA +1.8, Rice -2.2.</p></li><li><span>Rating moves</span><p>Rice -19.7 → -18.3 · UTSA -3.7 → -3.0</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>ULM @ USA</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model -15.5 / 52.5</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>South Alabama rate 13.2 points better than UL Monroe on a neutral field (Sun Belt vs Sun Belt). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -15.5 from the home side, book -14.0 — 1.5 points apart.</p></li><li><span>The total</span><p>Model 52.5 against 57.0. Team leans: UL Monroe +0.5, South Alabama -0.5.</p></li><li><span>Rating moves</span><p>UL Monroe -28.0 → -31.0 · South Alabama -15.6 → -17.8</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>TEM @ USF</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model -9.0 / 52.0</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>South Florida rate 6.3 points better than Temple on a neutral field (American vs American). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -9.0 from the home side, book -6.5 — 2.5 points apart.</p></li><li><span>The total</span><p>Model 52.0 against 48.5. Team leans: Temple -0.8, South Florida +0.2.</p></li><li><span>Rating moves</span><p>South Florida -5.1 → -7.5</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>ARMY @ LT</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model 2.5 / 51.5</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Louisiana Tech rate 4.9 points worse than Army on a neutral field (American vs Conference USA). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model +2.5 from the home side, book +2.2 — 0.2 points apart.</p></li><li><span>The total</span><p>Model 51.5 against 47.5. Team leans: Army -0.8, Louisiana Tech +0.0.</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp" open>
+   <summary><b>TTU @ COLO</b> <span class="pill">TTU -12.5</span> 
+   <small>Sat 10/3 · model 24.5 / 53.0</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Colorado rate 26.9 points worse than Texas Tech on a neutral field (Big 12 vs Big 12). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model +24.5 from the home side, book +12.5 — 12.0 points apart.</p></li><li><span>The total</span><p>Model 53.0 against 50.5. Team leans: Texas Tech +1.8, Colorado -1.2.</p></li><li><span>Rating moves</span><p>Texas Tech 16.6 → 15.3 · Colorado -12.0 → -11.6</p></li><li><span>The bet</span><p>TTU -12.5 — strong, 2u, covers 77% by the model</p></li></ul></details>
+   <details class="exp">
+   <summary><b>MIA @ CLEM</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model 19.5 / 51.0</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Clemson rate 22.2 points worse than Miami on a neutral field (ACC vs ACC). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model +19.5 from the home side, book +16.5 — 3.0 points apart.</p></li><li><span>The total</span><p>Model 51.0 against 48.0. Team leans: Miami -1.4, Clemson +0.0.</p></li><li><span>Rating moves</span><p>Miami 20.3 → 23.2</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>WASH @ USC</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model -12.5 / 54.0</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>USC rate 9.8 points better than Washington on a neutral field (Big Ten vs Big Ten). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -12.5 from the home side, book -9.5 — 3.0 points apart.</p></li><li><span>The total</span><p>Model 54.0 against 58.5. Team leans: Washington +0.0, USC +1.3.</p></li><li><span>Rating moves</span><p>Washington 5.7 → 3.6 · USC 15.3 → 13.4</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>USU @ BOIS</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model -18.0 / 55.5</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Boise State rate 15.6 points better than Utah State on a neutral field (Pac-12 vs Pac-12). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -18.0 from the home side, book -20.5 — 2.5 points apart.</p></li><li><span>The total</span><p>Model 55.5 against 51.5. Team leans: Utah State +3.5, Boise State -0.7.</p></li><li><span>Rating moves</span><p>Utah State -14.6 → -11.6 · Boise State 1.2 → 4.0</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>ARST @ UL</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model -9.0 / 52.5</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Louisiana rate 6.4 points better than Arkansas State on a neutral field (Sun Belt vs Sun Belt). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -9.0 from the home side, book -6.5 — 2.5 points apart.</p></li><li><span>The total</span><p>Model 52.5 against 47.5. Team leans: Arkansas State +0.2, Louisiana +0.0.</p></li><li><span>Rating moves</span><p>Louisiana -11.8 → -8.8 · Arkansas State -15.7 → -15.2</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>IU @ RUTG</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model 18.0 / 53.0</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Rutgers rate 20.3 points worse than Indiana on a neutral field (Big Ten vs Big Ten). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model +18.0 from the home side, book +24.0 — 6.0 points apart.</p></li><li><span>The total</span><p>Model 53.0 against 56.0. Team leans: Indiana +0.5, Rutgers -0.2.</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>FRES @ WSU</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model 5.5 / 50.5</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Washington State rate 7.9 points worse than Fresno State on a neutral field (Pac-12 vs Pac-12). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model +5.5 from the home side, book -2.5 — 8.0 points apart.</p></li><li><span>The total</span><p>Model 50.5 against 45.5. Team leans: Fresno State -1.9, Washington State +0.0.</p></li><li><span>Rating moves</span><p>Fresno State -2.7 → -4.1 · Washington State -12.6 → -12.0</p></li><li><span>Not on the card</span><p>FRES +2.5 has a solid edge but didn't make this week's top 8.</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>TXST @ SDSU</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model -1.5 / 54.5</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>San Diego State rate 1.2 points worse than Texas State on a neutral field (Pac-12 vs Pac-12). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -1.5 from the home side, book +4.5 — 6.0 points apart.</p></li><li><span>The total</span><p>Model 54.5 against 59.5. Team leans: Texas State +2.0, San Diego State +0.0.</p></li><li><span>Rating moves</span><p>San Diego State -8.8 → -11.8</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>BAY @ ASU</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model -7.5 / 54.0</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Arizona State rate 4.8 points better than Baylor on a neutral field (Big 12 vs Big 12). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -7.5 from the home side, book -4.0 — 3.5 points apart.</p></li><li><span>The total</span><p>Model 54.0 against 49.0. Team leans: Baylor +1.7, Arizona State +0.0.</p></li><li><span>Rating moves</span><p>Baylor -2.8 → -3.2</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>CIN @ ARIZ</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model -8.5 / 52.0</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Arizona rate 5.8 points better than Cincinnati on a neutral field (Big 12 vs Big 12). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -8.5 from the home side, book -7.0 — 1.5 points apart.</p></li><li><span>The total</span><p>Model 52.0 against 55.5. Team leans: Cincinnati -0.5, Arizona +0.0.</p></li><li><span>Rating moves</span><p>Cincinnati -7.2 → -4.2 · Arizona 2.2 → 1.6</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+   <details class="exp">
+   <summary><b>SJSU @ HAW</b> <span class="pill off">NO PLAY</span>
+   <small>Sat 10/3 · model -7.0 / 53.0</small></summary>
+   <ul class="reasons"><li><span>Team quality</span><p>Hawaii rate 4.7 points better than San Jose State on a neutral field (Mountain West vs Mountain West). Home field adds 2.5.</p></li><li><span>The spread</span><p>Model -7.0 from the home side, book -3.0 — 4.0 points apart.</p></li><li><span>The total</span><p>Model 53.0 against 51.5. Team leans: San Jose State +2.0, Hawaii -1.4.</p></li><li><span>Rating moves</span><p>Hawaii -12.2 → -15.2</p></li><li><span>The bet</span><p>No play.</p></li></ul></details>
+ </section>
+
+ <section id="power" class="view">
+   <h2>Power ratings</h2>
+   <table><tr><th class="n">#</th><th>Team</th><th class="n">Power</th><th class="n">Total lean</th></tr>
+   <tr><td class="n dim">1</td>
+   <td><b>OSU</b><small>Ohio State · Big Ten</small></td>
+   <td class="n up">+30.9</td>
+   <td class="n">+0.8</td></tr>
+   <tr><td class="n dim">2</td>
+   <td><b>UGA</b><small>Georgia · SEC</small></td>
+   <td class="n up">+29.6</td>
+   <td class="n">+0.8</td></tr>
+   <tr><td class="n dim">3</td>
+   <td><b>ORE</b><small>Oregon · Big Ten</small></td>
+   <td class="n up">+26.1</td>
+   <td class="n">-0.7</td></tr>
+   <tr><td class="n dim">4</td>
+   <td><b>ND</b><small>Notre Dame · Independent</small></td>
+   <td class="n up">+24.1</td>
+   <td class="n">+0.0</td></tr>
+   <tr><td class="n dim">5</td>
+   <td><b>IU</b><small>Indiana · Big Ten</small></td>
+   <td class="n up">+23.8</td>
+   <td class="n">+0.5</td></tr>
+   <tr><td class="n dim">6</td>
+   <td><b>MIA</b><small>Miami · ACC</small></td>
+   <td class="n up">+23.2</td>
+   <td class="n">-1.4</td></tr>
+   <tr><td class="n dim">7</td>
+   <td><b>TEX</b><small>Texas · SEC</small></td>
+   <td class="n up">+22.6</td>
+   <td class="n">+2.0</td></tr>
+   <tr><td class="n dim">8</td>
+   <td><b>ALA</b><small>Alabama · SEC</small></td>
+   <td class="n up">+21.5</td>
+   <td class="n">+0.2</td></tr>
+   <tr><td class="n dim">9</td>
+   <td><b>TENN</b><small>Tennessee · SEC</small></td>
+   <td class="n up">+16.3</td>
+   <td class="n">+4.3</td></tr>
+   <tr><td class="n dim">10</td>
+   <td><b>LSU</b><small>LSU · SEC</small></td>
+   <td class="n up">+15.9</td>
+   <td class="n">+0.0</td></tr>
+   <tr><td class="n dim">11</td>
+   <td><b>TTU</b><small>Texas Tech · Big 12</small></td>
+   <td class="n up">+15.3</td>
+   <td class="n">+1.8</td></tr>
+   <tr><td class="n dim">12</td>
+   <td><b>TA&M</b><small>Texas A&amp;M · SEC</small></td>
+   <td class="n up">+15.0</td>
+   <td class="n">-0.5</td></tr>
+   <tr><td class="n dim">13</td>
+   <td><b>UTAH</b><small>Utah · Big 12</small></td>
+   <td class="n up">+14.0</td>
+   <td class="n">+0.8</td></tr>
+   <tr><td class="n dim">14</td>
+   <td><b>USC</b><small>USC · Big Ten</small></td>
+   <td class="n up">+13.4</td>
+   <td class="n">+1.3</td></tr>
+   <tr><td class="n dim">15</td>
+   <td><b>FLA</b><small>Florida · SEC</small></td>
+   <td class="n up">+12.7</td>
+   <td class="n">+0.0</td></tr>
+   <tr><td class="n dim">16</td>
+   <td><b>OU</b><small>Oklahoma · SEC</small></td>
+   <td class="n up">+12.3</td>
+   <td class="n">-1.2</td></tr>
+   <tr><td class="n dim">17</td>
+   <td><b>MICH</b><small>Michigan · Big Ten</small></td>
+   <td class="n up">+11.6</td>
+   <td class="n">-2.2</td></tr>
+   <tr><td class="n dim">18</td>
+   <td><b>BYU</b><small>BYU · Big 12</small></td>
+   <td class="n up">+10.6</td>
+   <td class="n">+0.0</td></tr>
+   <tr><td class="n dim">19</td>
+   <td><b>MSST</b><small>Mississippi State · SEC</small></td>
+   <td class="n up">+10.4</td>
+   <td class="n">+0.5</td></tr>
+   <tr><td class="n dim">20</td>
+   <td><b>NEB</b><small>Nebraska · Big Ten</small></td>
+   <td class="n up">+10.3</td>
+   <td class="n">-2.2</td></tr>
+   <tr><td class="n dim">21</td>
+   <td><b>IOWA</b><small>Iowa · Big Ten</small></td>
+   <td class="n up">+9.9</td>
+   <td class="n">-2.8</td></tr>
+   <tr><td class="n dim">22</td>
+   <td><b>MISS</b><small>Ole Miss · SEC</small></td>
+   <td class="n up">+9.8</td>
+   <td class="n">+0.0</td></tr>
+   <tr><td class="n dim">23</td>
+   <td><b>OKST</b><small>Oklahoma State · Big 12</small></td>
+   <td class="n up">+9.6</td>
+   <td class="n">+2.3</td></tr>
+   <tr><td class="n dim">24</td>
+   <td><b>MIZ</b><small>Missouri · SEC</small></td>
+   <td class="n up">+8.8</td>
+   <td class="n">+2.2</td></tr>
+   <tr><td class="n dim">25</td>
+   <td><b>PSU</b><small>Penn State · Big Ten</small></td>
+   <td class="n up">+8.7</td>
+   <td class="n">+0.2</td></tr>
+   <tr><td class="n dim">26</td>
+   <td><b>FSU</b><small>Florida State · ACC</small></td>
+   <td class="n up">+8.7</td>
+   <td class="n">-0.5</td></tr>
+   <tr><td class="n dim">27</td>
+   <td><b>VT</b><small>Virginia Tech · ACC</small></td>
+   <td class="n up">+8.7</td>
+   <td class="n">+0.0</td></tr>
+   <tr><td class="n dim">28</td>
+   <td><b>ILL</b><small>Illinois · Big Ten</small></td>
+   <td class="n up">+6.2</td>
+   <td class="n">+0.8</td></tr>
+   <tr><td class="n dim">29</td>
+   <td><b>HOU</b><small>Houston · Big 12</small></td>
+   <td class="n up">+5.0</td>
+   <td class="n">-1.2</td></tr>
+   <tr><td class="n dim">30</td>
+   <td><b>MINN</b><small>Minnesota · Big Ten</small></td>
+   <td class="n up">+4.7</td>
+   <td class="n">-0.8</td></tr>
+   <tr><td class="n dim">31</td>
+   <td><b>UCLA</b><small>UCLA · Big Ten</small></td>
+   <td class="n up">+4.1</td>
+   <td class="n">+0.0</td></tr>
+   <tr><td class="n dim">32</td>
+   <td><b>BOIS</b><small>Boise State · Pac-12</small></td>
+   <td class="n up">+4.0</td>
+   <td class="n">-0.7</td></tr>
+   <tr><td class="n dim">33</td>
+   <td><b>WASH</b><small>Washington · Big Ten</small></td>
+   <td class="n up">+3.6</td>
+   <td class="n">+0.0</td></tr>
+   <tr><td class="n dim">34</td>
+   <td><b>RUTG</b><small>Rutgers · Big Ten</small></td>
+   <td class="n up">+3.5</td>
+   <td class="n">-0.2</td></tr>
+   <tr><td class="n dim">35</td>
+   <td><b>WIS</b><small>Wisconsin · Big Ten</small></td>
+   <td class="n up">+3.5</td>
+   <td class="n">+0.0</td></tr>
+   <tr><td class="n dim">36</td>
+   <td><b>LOU</b><small>Louisville · ACC</small></td>
+   <td class="n up">+3.4</td>
+   <td class="n">+0.0</td></tr>
+   <tr><td class="n dim">37</td>
+   <td><b>WAKE</b><small>Wake Forest · ACC</small></td>
+   <td class="n up">+2.6</td>
+   <td class="n">-1.8</td></tr>
+   <tr><td class="n dim">38</td>
+   <td><b>UCF</b><small>UCF · Big 12</small></td>
+   <td class="n up">+2.5</td>
+   <td class="n">+1.8</td></tr>
+   <tr><td class="n dim">39</td>
+   <td><b>SC</b><small>South Carolina · SEC</small></td>
+   <td class="n up">+2.3</td>
+   <td class="n">-0.2</td></tr>
+   <tr><td class="n dim">40</td>
+   <td><b>AUB</b><small>Auburn · SEC</small></td>
+   <td class="n up">+2.1</td>
+   <td class="n">+1.7</td></tr>
+   <tr><td class="n dim">41</td>
+   <td><b>PITT</b><small>Pittsburgh · ACC</small></td>
+   <td class="n up">+2.0</td>
+   <td class="n">-1.2</td></tr>
+   <tr><td class="n dim">42</td>
+   <td><b>ARIZ</b><small>Arizona · Big 12</small></td>
+   <td class="n up">+1.6</td>
+   <td class="n">+0.0</td></tr>
+   <tr><td class="n dim">43</td>
+   <td><b>ASU</b><small>Arizona State · Big 12</small></td>
+   <td class="n up">+1.6</td>
+   <td class="n">+0.0</td></tr>
+   <tr><td class="n dim">44</td>
+   <td><b>ARK</b><small>Arkansas · SEC</small></td>
+   <td class="n up">+1.5</td>
+   <td class="n">+3.2</td></tr>
+   <tr><td class="n dim">45</td>
+   <td><b>DUKE</b><small>Duke · ACC</small></td>
+   <td class="n up">+1.5</td>
+   <td class="n">-0.7</td></tr>
+   <tr><td class="n dim">46</td>
+   <td><b>KSU</b><small>Kansas State · Big 12</small></td>
+   <td class="n up">+1.4</td>
+   <td class="n">+0.5</td></tr>
+   <tr><td class="n dim">47</td>
+   <td><b>UNM</b><small>New Mexico · Mountain West</small></td>
+   <td class="n up">+1.2</td>
+   <td class="n">+0.0</td></tr>
+   <tr><td class="n dim">48</td>
+   <td><b>CLEM</b><small>Clemson · ACC</small></td>
+   <td class="n up">+1.0</td>
+   <td class="n">+0.0</td></tr>
+   <tr><td class="n dim">49</td>
+   <td><b>TCU</b><small>TCU · Big 12</small></td>
+   <td class="n up">+0.7</td>
+   <td class="n">-2.2</td></tr>
+   <tr><td class="n dim">50</td>
+   <td><b>MD</b><small>Maryland · Big Ten</small></td>
+   <td class="n up">+0.4</td>
+   <td class="n">+0.0</td></tr>
+   <tr><td class="n dim">51</td>
+   <td><b>ISU</b><small>Iowa State · Big 12</small></td>
+   <td class="n up">+0.4</td>
+   <td class="n">-0.2</td></tr>
+   <tr><td class="n dim">52</td>
+   <td><b>SMU</b><small>SMU · ACC</small></td>
+   <td class="n up">+0.3</td>
+   <td class="n">+0.0</td></tr>
+   <tr><td class="n dim">53</td>
+   <td><b>NDSU</b><small>North Dakota State · Independent</small></td>
+   <td class="n dn">-0.5</td>
+   <td class="n">-1.2</td></tr>
+   <tr><td class="n dim">54</td>
+   <td><b>UK</b><small>Kentucky · SEC</small></td>
+   <td class="n dn">-0.8</td>
+   <td class="n">+2.8</td></tr>
+   <tr><td class="n dim">55</td>
+   <td><b>UVA</b><small>Virginia · ACC</small></td>
+   <td class="n dn">-1.2</td>
+   <td class="n">-0.2</td></tr>
+   <tr><td class="n dim">56</td>
+   <td><b>NU</b><small>Northwestern · Big Ten</small></td>
+   <td class="n dn">-1.2</td>
+   <td class="n">+0.0</td></tr>
+   <tr><td class="n dim">57</td>
+   <td><b>VAN</b><small>Vanderbilt · SEC</small></td>
+   <td class="n dn">-2.1</td>
+   <td class="n">+0.0</td></tr>
+   <tr><td class="n dim">58</td>
+   <td><b>WVU</b><small>West Virginia · Big 12</small></td>
+   <td class="n dn">-2.2</td>
+   <td class="n">+0.8</td></tr>
+   <tr><td class="n dim">59</td>
+   <td><b>KU</b><small>Kansas · Big 12</small></td>
+   <td class="n dn">-2.5</td>
+   <td class="n">-0.2</td></tr>
+   <tr><td class="n dim">60</td>
+   <td><b>UTSA</b><small>UTSA · American</small></td>
+   <td class="n dn">-3.0</td>
+   <td class="n">+1.8</td></tr>
+   <tr><td class="n dim">61</td>
+   <td><b>CAL</b><small>California · ACC</small></td>
+   <td class="n dn">-3.1</td>
+   <td class="n">+0.0</td></tr>
+   <tr><td class="n dim">62</td>
+   <td><b>BAY</b><small>Baylor · Big 12</small></td>
+   <td class="n dn">-3.2</td>
+   <td class="n">+1.7</td></tr>
+   <tr><td class="n dim">63</td>
+   <td><b>JMU</b><small>James Madison · Sun Belt</small></td>
+   <td class="n dn">-3.5</td>
+   <td class="n">-0.5</td></tr>
+   <tr><td class="n dim">64</td>
+   <td><b>FRES</b><small>Fresno State · Pac-12</small></td>
+   <td class="n dn">-4.1</td>
+   <td class="n">-1.9</td></tr>
+   <tr><td class="n dim">65</td>
+   <td><b>CIN</b><small>Cincinnati · Big 12</small></td>
+   <td class="n dn">-4.2</td>
+   <td class="n">-0.5</td></tr>
+   <tr><td class="n dim">66</td>
+   <td><b>MSU</b><small>Michigan State · Big Ten</small></td>
+   <td class="n dn">-4.4</td>
+   <td class="n">-1.5</td></tr>
+   <tr><td class="n dim">67</td>
+   <td><b>SYR</b><small>Syracuse · ACC</small></td>
+   <td class="n dn">-4.6</td>
+   <td class="n">+0.5</td></tr>
+   <tr><td class="n dim">68</td>
+   <td><b>ARMY</b><small>Army · American</small></td>
+   <td class="n dn">-4.7</td>
+   <td class="n">-0.8</td></tr>
+   <tr><td class="n dim">69</td>
+   <td><b>NCSU</b><small>NC State · ACC</small></td>
+   <td class="n dn">-5.0</td>
+   <td class="n">-0.2</td></tr>
+   <tr><td class="n dim">70</td>
+   <td><b>NAVY</b><small>Navy · American</small></td>
+   <td class="n dn">-6.1</td>
+   <td class="n">-0.2</td></tr>
+   <tr><td class="n dim">71</td>
+   <td><b>UNLV</b><small>UNLV · Mountain West</small></td>
+   <td class="n dn">-6.7</td>
+   <td class="n">+0.8</td></tr>
+   <tr><td class="n dim">72</td>
+   <td><b>UNC</b><small>North Carolina · ACC</small></td>
+   <td class="n dn">-7.1</td>
+   <td class="n">-2.2</td></tr>
+   <tr><td class="n dim">73</td>
+   <td><b>TROY</b><small>Troy · Sun Belt</small></td>
+   <td class="n dn">-7.2</td>
+   <td class="n">-0.2</td></tr>
+   <tr><td class="n dim">74</td>
+   <td><b>USF</b><small>South Florida · American</small></td>
+   <td class="n dn">-7.5</td>
+   <td class="n">+0.2</td></tr>
+   <tr><td class="n dim">75</td>
+   <td><b>GAST</b><small>Georgia State · Sun Belt</small></td>
+   <td class="n dn">-8.1</td>
+   <td class="n">+3.2</td></tr>
+   <tr><td class="n dim">76</td>
+   <td><b>GT</b><small>Georgia Tech · ACC</small></td>
+   <td class="n dn">-8.4</td>
+   <td class="n">-1.2</td></tr>
+   <tr><td class="n dim">77</td>
+   <td><b>UL</b><small>Louisiana · Sun Belt</small></td>
+   <td class="n dn">-8.8</td>
+   <td class="n">+0.0</td></tr>
+   <tr><td class="n dim">78</td>
+   <td><b>AF</b><small>Air Force · Mountain West</small></td>
+   <td class="n dn">-9.5</td>
+   <td class="n">+1.5</td></tr>
+   <tr><td class="n dim">79</td>
+   <td><b>LT</b><small>Louisiana Tech · Conference USA</small></td>
+   <td class="n dn">-9.6</td>
+   <td class="n">+0.0</td></tr>
+   <tr><td class="n dim">80</td>
+   <td><b>ORST</b><small>Oregon State · Pac-12</small></td>
+   <td class="n dn">-9.8</td>
+   <td class="n">-1.2</td></tr>
+   <tr><td class="n dim">81</td>
+   <td><b>PUR</b><small>Purdue · Big Ten</small></td>
+   <td class="n dn">-9.9</td>
+   <td class="n">+0.8</td></tr>
+   <tr><td class="n dim">82</td>
+   <td><b>MEM</b><small>Memphis · American</small></td>
+   <td class="n dn">-10.4</td>
+   <td class="n">+1.0</td></tr>
+   <tr><td class="n dim">83</td>
+   <td><b>JXST</b><small>Jacksonville State · Conference USA</small></td>
+   <td class="n dn">-10.4</td>
+   <td class="n">-2.8</td></tr>
+   <tr><td class="n dim">84</td>
+   <td><b>WKU</b><small>Western Kentucky · Conference USA</small></td>
+   <td class="n dn">-10.6</td>
+   <td class="n">+0.0</td></tr>
+   <tr><td class="n dim">85</td>
+   <td><b>TXST</b><small>Texas State · Pac-12</small></td>
+   <td class="n dn">-10.6</td>
+   <td class="n">+2.0</td></tr>
+   <tr><td class="n dim">86</td>
+   <td><b>LIB</b><small>Liberty · Conference USA</small></td>
+   <td class="n dn">-10.9</td>
+   <td class="n">-0.5</td></tr>
+   <tr><td class="n dim">87</td>
+   <td><b>BC</b><small>Boston College · ACC</small></td>
+   <td class="n dn">-11.3</td>
+   <td class="n">-0.5</td></tr>
+   <tr><td class="n dim">88</td>
+   <td><b>STAN</b><small>Stanford · ACC</small></td>
+   <td class="n dn">-11.4</td>
+   <td class="n">-2.8</td></tr>
+   <tr><td class="n dim">89</td>
+   <td><b>FAU</b><small>Florida Atlantic · American</small></td>
+   <td class="n dn">-11.4</td>
+   <td class="n">+0.0</td></tr>
+   <tr><td class="n dim">90</td>
+   <td><b>ODU</b><small>Old Dominion · Sun Belt</small></td>
+   <td class="n dn">-11.5</td>
+   <td class="n">+0.5</td></tr>
+   <tr><td class="n dim">91</td>
+   <td><b>COLO</b><small>Colorado · Big 12</small></td>
+   <td class="n dn">-11.6</td>
+   <td class="n">-1.2</td></tr>
+   <tr><td class="n dim">92</td>
+   <td><b>USU</b><small>Utah State · Pac-12</small></td>
+   <td class="n dn">-11.6</td>
+   <td class="n">+3.5</td></tr>
+   <tr><td class="n dim">93</td>
+   <td><b>SDSU</b><small>San Diego State · Pac-12</small></td>
+   <td class="n dn">-11.8</td>
+   <td class="n">+0.0</td></tr>
+   <tr><td class="n dim">94</td>
+   <td><b>GASO</b><small>Georgia Southern · Sun Belt</small></td>
+   <td class="n dn">-11.8</td>
+   <td class="n">-0.8</td></tr>
+   <tr><td class="n dim">95</td>
+   <td><b>WSU</b><small>Washington State · Pac-12</small></td>
+   <td class="n dn">-12.0</td>
+   <td class="n">+0.0</td></tr>
+   <tr><td class="n dim">96</td>
+   <td><b>MOH</b><small>Miami (OH) · MAC</small></td>
+   <td class="n dn">-12.5</td>
+   <td class="n">-1.2</td></tr>
+   <tr><td class="n dim">97</td>
+   <td><b>TULN</b><small>Tulane · American</small></td>
+   <td class="n dn">-12.8</td>
+   <td class="n">-0.7</td></tr>
+   <tr><td class="n dim">98</td>
+   <td><b>TOL</b><small>Toledo · MAC</small></td>
+   <td class="n dn">-12.8</td>
+   <td class="n">-1.5</td></tr>
+   <tr><td class="n dim">99</td>
+   <td><b>CSU</b><small>Colorado State · Pac-12</small></td>
+   <td class="n dn">-13.1</td>
+   <td class="n">-2.0</td></tr>
+   <tr><td class="n dim">100</td>
+   <td><b>AS</b><small>Appalachian State · Sun Belt</small></td>
+   <td class="n dn">-13.3</td>
+   <td class="n">-0.2</td></tr>
+   <tr><td class="n dim">101</td>
+   <td><b>ECU</b><small>East Carolina · American</small></td>
+   <td class="n dn">-13.3</td>
+   <td class="n">+0.2</td></tr>
+   <tr><td class="n dim">102</td>
+   <td><b>TEM</b><small>Temple · American</small></td>
+   <td class="n dn">-13.8</td>
+   <td class="n">-0.8</td></tr>
+   <tr><td class="n dim">103</td>
+   <td><b>CONN</b><small>UConn · Independent</small></td>
+   <td class="n dn">-14.1</td>
+   <td class="n">+1.5</td></tr>
+   <tr><td class="n dim">104</td>
+   <td><b>DEL</b><small>Delaware · Conference USA</small></td>
+   <td class="n dn">-14.4</td>
+   <td class="n">+0.5</td></tr>
+   <tr><td class="n dim">105</td>
+   <td><b>KENN</b><small>Kennesaw State · Conference USA</small></td>
+   <td class="n dn">-14.5</td>
+   <td class="n">-0.8</td></tr>
+   <tr><td class="n dim">106</td>
+   <td><b>WYO</b><small>Wyoming · Mountain West</small></td>
+   <td class="n dn">-14.8</td>
+   <td class="n">-2.0</td></tr>
+   <tr><td class="n dim">107</td>
+   <td><b>HAW</b><small>Hawaii · Mountain West</small></td>
+   <td class="n dn">-15.2</td>
+   <td class="n">-1.4</td></tr>
+   <tr><td class="n dim">108</td>
+   <td><b>ARST</b><small>Arkansas State · Sun Belt</small></td>
+   <td class="n dn">-15.2</td>
+   <td class="n">+0.2</td></tr>
+   <tr><td class="n dim">109</td>
+   <td><b>MRSH</b><small>Marshall · Sun Belt</small></td>
+   <td class="n dn">-15.6</td>
+   <td class="n">+0.2</td></tr>
+   <tr><td class="n dim">110</td>
+   <td><b>UNT</b><small>North Texas · American</small></td>
+   <td class="n dn">-16.0</td>
+   <td class="n">+0.5</td></tr>
+   <tr><td class="n dim">111</td>
+   <td><b>MTSU</b><small>Middle Tennessee · Conference USA</small></td>
+   <td class="n dn">-16.2</td>
+   <td class="n">+1.8</td></tr>
+   <tr><td class="n dim">112</td>
+   <td><b>BUF</b><small>Buffalo · MAC</small></td>
+   <td class="n dn">-16.3</td>
+   <td class="n">-1.8</td></tr>
+   <tr><td class="n dim">113</td>
+   <td><b>NEV</b><small>Nevada · Mountain West</small></td>
+   <td class="n dn">-17.2</td>
+   <td class="n">+0.0</td></tr>
+   <tr><td class="n dim">114</td>
+   <td><b>CMU</b><small>Central Michigan · MAC</small></td>
+   <td class="n dn">-17.6</td>
+   <td class="n">+0.0</td></tr>
+   <tr><td class="n dim">115</td>
+   <td><b>USA</b><small>South Alabama · Sun Belt</small></td>
+   <td class="n dn">-17.8</td>
+   <td class="n">-0.5</td></tr>
+   <tr><td class="n dim">116</td>
+   <td><b>WMU</b><small>Western Michigan · MAC</small></td>
+   <td class="n dn">-17.8</td>
+   <td class="n">-2.2</td></tr>
+   <tr><td class="n dim">117</td>
+   <td><b>OHIO</b><small>Ohio · MAC</small></td>
+   <td class="n dn">-18.0</td>
+   <td class="n">-2.2</td></tr>
+   <tr><td class="n dim">118</td>
+   <td><b>RICE</b><small>Rice · American</small></td>
+   <td class="n dn">-18.3</td>
+   <td class="n">-2.2</td></tr>
+   <tr><td class="n dim">119</td>
+   <td><b>CCU</b><small>Coastal Carolina · Sun Belt</small></td>
+   <td class="n dn">-18.9</td>
+   <td class="n">+0.8</td></tr>
+   <tr><td class="n dim">120</td>
+   <td><b>EMU</b><small>Eastern Michigan · MAC</small></td>
+   <td class="n dn">-19.1</td>
+   <td class="n">-1.3</td></tr>
+   <tr><td class="n dim">121</td>
+   <td><b>USM</b><small>Southern Miss · Sun Belt</small></td>
+   <td class="n dn">-19.2</td>
+   <td class="n">-1.2</td></tr>
+   <tr><td class="n dim">122</td>
+   <td><b>TLSA</b><small>Tulsa · American</small></td>
+   <td class="n dn">-19.4</td>
+   <td class="n">+2.3</td></tr>
+   <tr><td class="n dim">123</td>
+   <td><b>FIU</b><small>FIU · Conference USA</small></td>
+   <td class="n dn">-19.7</td>
+   <td class="n">+0.2</td></tr>
+   <tr><td class="n dim">124</td>
+   <td><b>SJSU</b><small>San Jose State · Mountain West</small></td>
+   <td class="n dn">-19.9</td>
+   <td class="n">+2.0</td></tr>
+   <tr><td class="n dim">125</td>
+   <td><b>SHSU</b><small>Sam Houston · Conference USA</small></td>
+   <td class="n dn">-19.9</td>
+   <td class="n">-0.2</td></tr>
+   <tr><td class="n dim">126</td>
+   <td><b>MOST</b><small>Missouri State · Conference USA</small></td>
+   <td class="n dn">-20.4</td>
+   <td class="n">-0.5</td></tr>
+   <tr><td class="n dim">127</td>
+   <td><b>UAB</b><small>UAB · American</small></td>
+   <td class="n dn">-20.5</td>
+   <td class="n">+0.8</td></tr>
+   <tr><td class="n dim">128</td>
+   <td><b>CLT</b><small>Charlotte · American</small></td>
+   <td class="n dn">-21.5</td>
+   <td class="n">-2.5</td></tr>
+   <tr><td class="n dim">129</td>
+   <td><b>KENT</b><small>Kent State · MAC</small></td>
+   <td class="n dn">-21.5</td>
+   <td class="n">-0.2</td></tr>
+   <tr><td class="n dim">130</td>
+   <td><b>NMSU</b><small>New Mexico State · Conference USA</small></td>
+   <td class="n dn">-21.9</td>
+   <td class="n">-0.5</td></tr>
+   <tr><td class="n dim">131</td>
+   <td><b>BGSU</b><small>Bowling Green · MAC</small></td>
+   <td class="n dn">-22.8</td>
+   <td class="n">-2.2</td></tr>
+   <tr><td class="n dim">132</td>
+   <td><b>NIU</b><small>Northern Illinois · Mountain West</small></td>
+   <td class="n dn">-23.4</td>
+   <td class="n">-2.8</td></tr>
+   <tr><td class="n dim">133</td>
+   <td><b>SAC</b><small>Sacramento State · Big Sky (FBS Ind.)</small></td>
+   <td class="n dn">-24.2</td>
+   <td class="n">-0.1</td></tr>
+   <tr><td class="n dim">134</td>
+   <td><b>UTEP</b><small>UTEP · Mountain West</small></td>
+   <td class="n dn">-25.0</td>
+   <td class="n">-1.2</td></tr>
+   <tr><td class="n dim">135</td>
+   <td><b>MASS</b><small>UMass · MAC</small></td>
+   <td class="n dn">-25.1</td>
+   <td class="n">-0.2</td></tr>
+   <tr><td class="n dim">136</td>
+   <td><b>BALL</b><small>Ball State · MAC</small></td>
+   <td class="n dn">-26.1</td>
+   <td class="n">+0.8</td></tr>
+   <tr><td class="n dim">137</td>
+   <td><b>AKR</b><small>Akron · MAC</small></td>
+   <td class="n dn">-28.4</td>
+   <td class="n">-1.8</td></tr>
+   <tr><td class="n dim">138</td>
+   <td><b>ULM</b><small>UL Monroe · Sun Belt</small></td>
+   <td class="n dn">-31.0</td>
+   <td class="n">+0.5</td></tr>
+   </table>
+ </section>
+
+ <section id="how" class="view prose">
+   <h2>How it works</h2>
+   <p>Every FBS team has a power rating — points better or worse than an average team on a neutral field — and a total lean.
+   The model spread is the rating difference plus 2.5 for home field; the model total is a base plus both teams' leans.
+   Ratings move 25% of each miss after every game.</p>
+   <p><b>The card.</b> Every game is priced, but only the 8 strongest plays each week become bets — MAX first, then
+   STRONG, then SOLID, biggest edge first. Picks lock on game day. Everything else with an edge shows as "watch" on the slate.</p>
+   <p><b>Tiers.</b> Same as NFL and MLB: ✅ SOLID at 8 points of disagreement with the book, 🔥 STRONG at 11, 💎 MAX at 14.
+   College lines are softer and noisier than the NFL, so the bar is higher.</p>
+   <p><b>Units.</b> ✅ SOLID 1u, 🔥 STRONG 2u, 💎 MAX 3u, bet to win at -110. The whole record is stated on that scale.</p>
+   <p><b>Honesty.</b> The Model vs the market tiles are the real test: if the book keeps landing closer to the final margin,
+   the edges aren't real yet.</p>
+ </section>
+<section id='conf' class='view'><h2>Conferences</h2><p class='note'>Average power rating of each league's teams, and its best team.</p><table><tr><th>Conference</th><th class='n'>Average</th><th class='n'>Best</th></tr><tr><td><b>SEC</b><small>16 teams</small></td><td class='n up'><b>+11.1</b></td><td class='n dim'>+29.6</td></tr><tr><td><b>Big Ten</b><small>18 teams</small></td><td class='n up'><b>+8.1</b></td><td class='n dim'>+30.9</td></tr><tr><td><b>Independent</b><small>3 teams</small></td><td class='n up'><b>+3.2</b></td><td class='n dim'>+24.1</td></tr><tr><td><b>Big 12</b><small>16 teams</small></td><td class='n up'><b>+2.4</b></td><td class='n dim'>+15.3</td></tr><tr><td><b>ACC</b><small>17 teams</small></td><td class='n up'><b>-0.0</b></td><td class='n dim'>+23.2</td></tr><tr><td><b>Pac-12</b><small>8 teams</small></td><td class='n up'><b>-8.6</b></td><td class='n dim'>+4.0</td></tr><tr><td><b>American</b><small>14 teams</small></td><td class='n up'><b>-12.8</b></td><td class='n dim'>-3.0</td></tr><tr><td><b>Sun Belt</b><small>13 teams</small></td><td class='n up'><b>-14.0</b></td><td class='n dim'>-3.5</td></tr><tr><td><b>Mountain West</b><small>9 teams</small></td><td class='n up'><b>-14.5</b></td><td class='n dim'>+1.2</td></tr><tr><td><b>Conference USA</b><small>11 teams</small></td><td class='n up'><b>-15.3</b></td><td class='n dim'>-9.6</td></tr><tr><td><b>MAC</b><small>12 teams</small></td><td class='n up'><b>-19.8</b></td><td class='n dim'>-12.5</td></tr><tr><td><b>Big Sky (FBS Ind.)</b><small>1 teams</small></td><td class='n up'><b>-24.2</b></td><td class='n dim'>-24.2</td></tr></table></section></main>
+
+<div class="tabbar">
+  <a class="on" data-t="bets" onclick="go('bets')"><b>🎯</b>Bets</a>
+  <a data-t="slate" onclick="go('slate')"><b>📋</b>Slate</a>
+  <a data-t="power" onclick="go('power')"><b>🏆</b>Power</a>
+  <a data-t="why" onclick="go('why')"><b>💬</b>Why</a>
+  <a data-t="record" onclick="go('record')"><b>📈</b>Record</a>
+  <a data-t="more" onclick="menu()"><b>☰</b>More</a>
+</div>
+
+<footer>Updated Wed Sep 30, 1:18 PM · rebuilt Saturday mornings<br>
+Model output, not advice. College only — graded separately from NFL and MLB.</footer>
+
+<script>
+var BUILT = 1790788751;
+function fmt(sec){
+  var d=Math.floor(sec/86400), h=Math.floor(sec%86400/3600), m=Math.floor(sec%3600/60);
+  if(d>0) return 'in '+d+'d '+h+'h';
+  if(h>0) return 'in '+h+'h '+m+'m';
+  return 'in '+Math.max(1,m)+'m';
+}
+function clocks(){
+  var now=Date.now()/1000;
+  document.querySelectorAll('.clock').forEach(function(el){
+    var k=parseInt(el.dataset.k||'0',10); if(!k){ el.textContent=''; return; }
+    el.classList.remove('live','done');
+    if(now < k){ el.textContent='· '+fmt(k-now); }
+    else if(now < k+12600){ el.textContent='· LIVE'; el.classList.add('live'); }
+    else { el.textContent='· final'; el.classList.add('done'); }
+  });
+  var age=(Date.now()/1000-BUILT)/3600, s=document.getElementById('stale');
+  if(age>24){ s.textContent='⚠ This board is '+Math.floor(age/24)+' day(s) old — the model has not run since. Numbers below are stale.'; s.classList.add('on'); }
+}
+clocks(); setInterval(clocks, 30000);
+function menu(){ document.querySelector('.menu').classList.toggle('open'); }
+function go(id){
+  document.querySelectorAll('.view').forEach(function(v){ v.classList.toggle('on', v.id===id); });
+  document.querySelectorAll('.tabbar a').forEach(function(a){ a.classList.toggle('on', a.dataset.t===id); });
+  document.querySelector('.menu').classList.remove('open');
+  window.scrollTo(0,0);
+  try{ localStorage.setItem('tab', id); }catch(e){}
+}
+try{ var t = localStorage.getItem('tab'); if(t && document.getElementById(t)) go(t); }catch(e){}
+</script>
+<script>var TC={"ACU": ["#592d82", "#b1b3b3"], "AF": ["#003594", "#ffffff"], "AKR": ["#041e42", "#c5b783"], "ALA": ["#9e1b32", "#ffffff"], "ALCN": ["#4b0058", "#46166a"], "AS": ["#243244", "#111111"], "ARIZ": ["#cc0033", "#003366"], "ASU": ["#ffc627", "#8c1d40"], "ARK": ["#a32136", "#ffffff"], "ARST": ["#cc092f", "#000000"], "UAPB": ["#e0aa0f", "#eaaa00"], "ARMY": ["#000000", "#d3bc8d"], "AUB": ["#002b5c", "#f26522"], "APSU": ["#8e0b0b", "#111111"], "BYU": ["#0047ba", "#002e5d"], "BALL": ["#ba0c2f", "#ffffff"], "BAY": ["#154734", "#ffb81c"], "BCU": ["#7b1831", "#e9aa12"], "BOIS": ["#0033a0", "#d64309"], "BC": ["#8c2232", "#dbcca6"], "BGSU": ["#fd5000", "#4f2c1d"], "BRY": ["#000000", "#9f8343"], "BUF": ["#005bbb", "#ffffff"], "CAL": ["#041e42", "#ffc72c"], "CMU": ["#4c0027", "#fbab18"], "CHSO": ["#2e3192", "#ded090"], "CLT": ["#005035", "#a49665"], "CIN": ["#000000", "#e00122"], "CLEM": ["#f56600", "#ffffff"], "CCU": ["#006f71", "#a27752"], "COLO": ["#cfb87c", "#000000"], "CSU": ["#004c23", "#c8c372"], "DEL": ["#00539f", "#ffd200"], "DUKE": ["#00539b", "#ffffff"], "DUQ": ["#002D62", "#b90b2e"], "ECU": ["#582c83", "#ffc72c"], "EIU": ["#000000", "#bebab9"], "EKU": ["#660819", "#f0f0f0"], "EMU": ["#006938", "#ffffff"], "FIU": ["#091f3f", "#c3993f"], "FLA": ["#0021a5", "#fa4616"], "FAU": ["#003366", "#cc0000"], "FSU": ["#782f40", "#ceb888"], "FOR": ["#830032", "#909090"], "FRES": ["#b1102b", "#13284c"], "FUR": ["#582c83", "#ffffff"], "UGA": ["#ba0c2f", "#2c2a29"], "GASO": ["#041e42", "#a3aaae"], "GAST": ["#0039a6", "#ffffff"], "GT": ["#b3a369", "#ffffff"], "HAMP": ["#0067AC", "#111111"], "HAW": ["#005737", "#000000"], "HOU": ["#c8102e", "#ffffff"], "HCU": ["#00539c", "#111111"], "IDHO": ["#000000", "#8c6e4a"], "IDST": ["#ef8c00", "#e9a126"], "ILL": ["#ff5f05", "#13294b"], "IU": ["#970310", "#ffffff"], "INST": ["#00669a", "#f0f0f0"], "IOWA": ["#231f20", "#fcd116"], "ISU": ["#ae192d", "#ffc72a"], "JXST": ["#cc0000", "#000000"], "JMU": ["#450084", "#cbb677"], "KU": ["#0051ba", "#e8000d"], "KSU": ["#330a57", "#e2e3e4"], "KENN": ["#fdbb30", "#0b1315"], "KENT": ["#002664", "#eaab00"], "UK": ["#0033a0", "#ffffff"], "LIU": ["#243244", "#111111"], "LSU": ["#461d76", "#fdd023"], "LAF": ["#790000", "#a59474"], "LAM": ["#000000", "#ebebeb"], "LIB": ["#0a254e", "#b72025"], "UL": ["#ce181e", "#000000"], "LT": ["#003087", "#cb333b"], "LOU": ["#c9001f", "#ffffff"], "ME": ["#127dbe", "#111111"], "MRSH": ["#00b140", "#000000"], "MD": ["#ce1126", "#ffffff"], "MEM": ["#004991", "#8e908f"], "MERC": ["#000000", "#111111"], "MRMK": ["#000000", "#111111"], "MIA": ["#f47423", "#035131"], "MOH": ["#c41230", "#ffffff"], "MICH": ["#00274c", "#ffcb05"], "MSU": ["#173f35", "#ffffff"], "MTSU": ["#036eb7", "#ffffff"], "MINN": ["#5e0a2f", "#fab41c"], "MSST": ["#5d1725", "#c1c6c8"], "MVSU": ["#005328", "#cf2d34"], "MIZ": ["#f1b82d", "#000000"], "MOST": ["#5e0009", "#ffffff"], "MORG": ["#014786", "#f47937"], "MUR": ["#002148", "#000e00"], "NCSU": ["#cc0000", "#ffffff"], "NAVY": ["#00225b", "#b5a67c"], "NEB": ["#e31937", "#ffffff"], "NEV": ["#041e42", "#8a8d8f"], "UNH": ["#004990", "#c3c4c6"], "UNM": ["#ba0c2f", "#a7a8aa"], "NMSU": ["#7e141b", "#231f20"], "NICH": ["#C41230", "#f0f0f0"], "NORF": ["#0c8968", "#fdb813"], "UNA": ["#000000", "#111111"], "UNC": ["#7bafd4", "#13294b"], "NCAT": ["#0505aa", "#004684"], "NDSU": ["#01402A", "#ffffff"], "UNT": ["#068f33", "#ffffff"], "NAU": ["#003976", "#1b3069"], "NIU": ["#c8102e", "#000000"], "NU": ["#492f92", "#ffffff"], "NWST": ["#492F91", "#ed6118"], "ND": ["#062340", "#c99700"], "OHIO": ["#154734", "#ffffff"], "OSU": ["#ba0c2f", "#a8adb4"], "OU": ["#990000", "#ffffff"], "OKST": ["#fe5c00", "#000000"], "ODU": ["#003768", "#a1d2f1"], "MISS": ["#13294b", "#cf142b"], "ORE": ["#00934b", "#fff41b"], "ORST": ["#dc4405", "#000000"], "PSU": ["#061440", "#ffffff"], "PITT": ["#003594", "#ffb81c"], "PRST": ["#00311e", "#ebebeb"], "PUR": ["#ceb888", "#000000"], "URI": ["#091f3f", "#5ab3e8"], "RICE": ["#00205b", "#c1c6c8"], "RUTG": ["#ce0e2d", "#ffffff"], "SMU": ["#a80000", "#0033a1"], "SAC": ["#00573C", "#cdb97d"], "SHSU": ["#f56423", "#ffffff"], "SDSU": ["#a6192e", "#000000"], "SJSU": ["#0038a8", "#ffb81a"], "USA": ["#00205b", "#bf0d3e"], "SC": ["#73000a", "#000000"], "SDST": ["#0033a0", "#ffd100"], "USF": ["#006747", "#cfc493"], "SEMO": ["#c8102e", "#000000"], "SL": ["#243244", "#111111"], "USM": ["#ffc72c", "#231f20"], "STAN": ["#8c1515", "#ffffff"], "SYR": ["#000e54", "#ff431b"], "TCU": ["#4d1979", "#ffffff"], "TAR": ["#000000", "#111111"], "TEM": ["#a41e35", "#ffffff"], "TENN": ["#ff8200", "#ffffff"], "TNST": ["#171796", "#f0f0f0"], "TEX": ["#af5c37", "#ffffff"], "TA&M": ["#500000", "#ffffff"], "TXST": ["#501214", "#6a5638"], "TTU": ["#da291c", "#000000"], "CIT": ["#7badd3", "#002856"], "TOL": ["#0b2240", "#ffcd00"], "TOW": ["#FFC229", "#111111"], "TROY": ["#862633", "#b1b1b1"], "TULN": ["#006747", "#418fde"], "TLSA": ["#003595", "#d0b787"], "UAB": ["#1a5632", "#fdb913"], "UALB": ["#3D2777", "#ffffff"], "UCF": ["#000000", "#b4a169"], "UCLA": ["#2774ae", "#f2a900"], "CONN": ["#0c2340", "#a2aaad"], "ULM": ["#840029", "#fdb913"], "MASS": ["#881c1c", "#ffffff"], "UNLV": ["#cf0a2c", "#cac8c8"], "USC": ["#9d2235", "#ffc72c"], "URGV": ["#243244", "#111111"], "UTEP": ["#ff8200", "#041e42"], "UTSA": ["#0c2340", "#f15a22"], "UTAH": ["#be0000", "#ffffff"], "USU": ["#0f2439", "#ffffff"], "UTU": ["#000000", "#111111"], "VMI": ["#ae122a", "#000000"], "VAN": ["#000000", "#cfae70"], "UVA": ["#232d4b", "#f84c1e"], "VT": ["#6a2c3e", "#cf4520"], "WAKE": ["#ceb888", "#2c2a29"], "WASH": ["#33006f", "#e8d3a2"], "WSU": ["#a60f2d", "#4d4d4d"], "WGA": ["#0033a1", "#db1a21"], "WVU": ["#eaaa00", "#002855"], "WKU": ["#e13a3e", "#ffffff"], "WMU": ["#532e1f", "#f1c500"], "WIS": ["#a00000", "#ffffff"], "WYO": ["#492f24", "#ffc425"], "YSU": ["#E51936", "#690717"]};var LH={};
+
+/* ---------------- fold the menu into groups ------------------------------ */
+/* The menu grew past a screen and a half. Same links, sorted into four
+   collapsible groups; the one holding the page you are on opens itself. */
+setTimeout(function(){
+  var m=document.querySelector('.menu'); if(!m||m.querySelector('.grp')) return;
+  var links=[].slice.call(m.querySelectorAll('a'));
+  if(links.length<7) return;
+  var GROUPS=[
+    ["This week",  ["today's bets","full slate","rating moves","play explanations"]],
+    ["The numbers",["power ratings","conferences","model vs the market"]],
+    ["Me",         ["my record","how it works"]]
+  ];
+  function label(a){return (a.childNodes[0]?a.childNodes[0].textContent:a.textContent||'')
+    .replace(/\s+/g,' ').trim().toLowerCase();}
+  var used={}, frag=document.createDocumentFragment();
+  GROUPS.forEach(function(g){
+    var mine=links.filter(function(a){return g[1].indexOf(label(a))>-1;});
+    mine.forEach(function(a){used[label(a)]=1;});
+    if(!mine.length) return;
+    var h=document.createElement('div'); h.className='grp';
+    h.innerHTML='<span class="lbl">'+g[0]+'</span><span class="ct">'+mine.length+'</span>';
+    frag.appendChild(h);
+    mine.forEach(function(a){a.classList.add('in'); frag.appendChild(a);});
+  });
+  // anything added later that no group names yet still shows up, at the end
+  var rest=links.filter(function(a){return !used[label(a)];});
+  if(rest.length){
+    var h=document.createElement('div'); h.className='grp';
+    h.innerHTML='<span class="lbl">More</span><span class="ct">'+rest.length+'</span>';
+    frag.appendChild(h);
+    rest.forEach(function(a){a.classList.add('in'); frag.appendChild(a);});
+  }
+  m.innerHTML=''; m.appendChild(frag);
+
+  function items(h){var out=[],n=h.nextElementSibling;
+    while(n&&n.classList.contains('in')){out.push(n); n=n.nextElementSibling;} return out;}
+  function toggle(h,force){
+    var open=(force===undefined)?!h.classList.contains('open'):force;
+    h.classList.toggle('open',open);
+    items(h).forEach(function(a){a.classList.toggle('show',open);});
+  }
+  m.addEventListener('click',function(e){
+    var h=e.target.closest('.grp'); if(!h) return;
+    var wasOpen=h.classList.contains('open');
+    m.querySelectorAll('.grp').forEach(function(x){toggle(x,false);});
+    toggle(h,!wasOpen);
+  });
+  // open whichever group holds the view you are looking at
+  function sync(){
+    var cur=(document.querySelector('.view.on')||{}).id||'bets';
+    var hit=null;
+    m.querySelectorAll('a.in').forEach(function(a){
+      var oc=a.getAttribute('onclick')||'';
+      if(oc.indexOf("go('"+cur+"')")>-1&&!hit) hit=a;
+    });
+    m.querySelectorAll('.grp').forEach(function(x){toggle(x,false);});
+    var h=hit?hit.previousElementSibling:null;
+    while(h&&!h.classList.contains('grp')) h=h.previousElementSibling;
+    toggle(h||m.querySelector('.grp'),true);
+  }
+  sync();
+  var g=window.go; window.go=function(t){g(t); setTimeout(sync,0);};
+},0);
+
+/* ---------------- prop value finder -------------------------------------- */
+/* American price -> decimal payout, then edge = p * payout - 1, i.e. expected
+   profit per dollar risked. The model supplies p; you supply the price. */
+setTimeout(function(){
+  var sec=document.getElementById('value'); if(!sec) return;
+  var KEY='px:'+ (document.querySelector('footer')||{textContent:''}).textContent.slice(0,24);
+  var saved={};
+  try{ saved=JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){}
+
+  function dec(am){am=parseFloat(am); if(isNaN(am)||am===0) return null;
+    return am>0?1+am/100:1+100/Math.abs(am);}
+  function fmtPct(x){return (x>0?'+':'')+(x*100).toFixed(1)+'%';}
+
+  function scoreRow(tr){
+    var inp=tr.querySelector('.px'), td=tr.querySelector('.edge');
+    var p=parseFloat(tr.dataset.p), d=dec(inp.value);
+    if(!p||!d){td.textContent='—'; td.className='n edge'; tr.classList.remove('hit'); return;}
+    var ev=p*d-1;
+    td.textContent=fmtPct(ev);
+    td.className='n edge '+(ev>0?'pos':'neg');
+    tr.classList.toggle('hit',ev>0.02);
+  }
+  function save(){ try{localStorage.setItem(KEY,JSON.stringify(saved));}catch(e){} }
+
+  sec.addEventListener('input',function(e){
+    var inp=e.target.closest('.px'); if(!inp) return;
+    var tr=inp.closest('tr');
+    saved[tr.dataset.k+'|'+(sec.querySelector('.kline').value||'')]=inp.value;
+    save(); scoreRow(tr);
+  });
+
+  /* kickers: one row, many lines — repoint the row at whichever line is picked */
+  var sel=sec.querySelector('.kline');
+  var lines=[];
+  sec.querySelectorAll('.krow').forEach(function(tr){
+    try{ Object.keys(JSON.parse(tr.dataset.lad)).forEach(function(l){
+      if(lines.indexOf(l)<0) lines.push(l); }); }catch(e){}
+  });
+  lines.sort(function(a,b){return a-b});
+  sel.innerHTML=lines.map(function(l){return '<option'+(l==='7.5'?' selected':'')+
+    '>'+l+'</option>'}).join('');
+  function paintKickers(){
+    var L=sel.value;
+    sec.querySelectorAll('.krow').forEach(function(tr){
+      var lad={}; try{lad=JSON.parse(tr.dataset.lad);}catch(e){}
+      var v=lad[L];
+      if(!v){tr.hidden=true; return;}
+      tr.hidden=false; tr.dataset.p=v[0];
+      tr.querySelector('.prob').innerHTML=Math.round(v[0]*100)+'%<small>over '+L+'</small>';
+      tr.querySelector('.fair').innerHTML=(v[1]>0?'+':'')+Math.round(v[1])+'<small>fair</small>';
+      var k=tr.dataset.k+'|'+L, inp=tr.querySelector('.px');
+      inp.value=saved[k]||'';
+      scoreRow(tr);
+    });
+  }
+  sel.addEventListener('change',paintKickers);
+
+  /* restore anything typed earlier */
+  sec.querySelectorAll('tr[data-k]').forEach(function(tr){
+    if(tr.classList.contains('krow')) return;
+    var inp=tr.querySelector('.px'); if(!inp) return;
+    inp.value=saved[tr.dataset.k+'|']||''; scoreRow(tr);
+  });
+  paintKickers();
+
+  /* board switcher + search */
+  sec.querySelector('.vtabs').addEventListener('click',function(e){
+    var b=e.target.closest('button'); if(!b) return;
+    sec.querySelectorAll('.vtabs button').forEach(function(x){x.classList.remove('on')});
+    b.classList.add('on');
+    sec.querySelectorAll('.vt').forEach(function(d){d.hidden=d.dataset.v!==b.dataset.v;});
+    sel.classList.toggle('on',b.dataset.v==='k');
+  });
+  var q=sec.querySelector('.vsearch');
+  q.addEventListener('input',function(){
+    var t=q.value.trim().toLowerCase();
+    sec.querySelectorAll('.vt tr[data-k]').forEach(function(tr){
+      if(tr.classList.contains('krow')&&tr.dataset.hiddenByLine) return;
+      tr.style.display=(!t||tr.textContent.toLowerCase().indexOf(t)>-1)?'':'none';
+    });
+  });
+},0);
+
+/* ---------------- menu links jump to their own heading ------------------- */
+/* Several menu entries live partway down a page — "Line movement" is the
+   second block of the slate, "First TD & kickers" the second and third of
+   props. Switching the view alone dumped you at the top of it, so each link
+   now also scrolls to the heading it names, clearing the pinned bar. */
+setTimeout(function(){
+  var m=document.querySelector('.menu'); if(!m) return;
+  var WHERE={                       // menu label -> which h2 inside that view
+    "line movement":1, "season so far":1,
+    "anytime td":0, "first td & kickers":1, "first td and kickers":1,
+    "my record":0, "play explanations":0
+  };
+  function barH(){var b=document.querySelector('.topbar')||document.querySelector('.navbar');
+    return b?b.getBoundingClientRect().height+10:60;}
+  m.addEventListener('click',function(e){
+    var a=e.target.closest('a'); if(!a) return;
+    var oc=a.getAttribute('onclick')||'', v=(oc.match(/go\('(\w+)'\)/)||[])[1];
+    if(!v) return;
+    var label=(a.childNodes[0]?a.childNodes[0].textContent:a.textContent||'')
+              .replace(/\s+/g,' ').trim().toLowerCase();
+    var view=document.getElementById(v); if(!view) return;
+    var hs=view.querySelectorAll('h2'), idx=WHERE[label];
+    if(idx===undefined){                      // fall back to matching the words
+      for(var i=0;i<hs.length;i++){
+        var t=hs[i].textContent.toLowerCase();
+        if(t.indexOf(label)>-1||label.indexOf(t)>-1){idx=i;break;}
+      }
+    }
+    setTimeout(function(){
+      if(!idx){window.scrollTo({top:0,behavior:'smooth'}); return;}
+      var h=hs[idx]; if(!h) return;
+      var y=h.getBoundingClientRect().top+window.pageYOffset-barH();
+      window.scrollTo({top:Math.max(0,y),behavior:'smooth'});
+    },60);
+  });
+},0);
+
+/* ================= LINE MOVEMENT CHARTS ================================== */
+/* LH is keyed "AWAY@HOME"; each point is
+   [unix_ts, consensus_spread, consensus_total, sharp_spread, public_spread] */
+function lhKey(row){
+  var t=(row||'').match(/([A-Z&]{2,5})\s*@\s*([A-Z&]{2,5})/);
+  return t?t[1]+'@'+t[2]:null;
+}
+function lhSpark(g,w,h){
+  var v=g.pts.map(function(p){return p[1]}).filter(function(x){return x!==null});
+  if(v.length<2) return '';
+  var lo=Math.min.apply(null,v), hi=Math.max.apply(null,v), r=(hi-lo)||1;
+  var d=v.map(function(x,i){return (i?'L':'M')+(i/(v.length-1)*w).toFixed(1)+','+
+    (h-2-((x-lo)/r)*(h-4)).toFixed(1)}).join(' ');
+  // toward the home favourite (more negative) is a move on the home side
+  var col=v[v.length-1]<v[0]?'#5ef2a5':(v[v.length-1]>v[0]?'#ff8d8d':'#8fa8c0');
+  return '<svg class="spark" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none">'+
+         '<path d="'+d+'" stroke="'+col+'"/></svg>';
+}
+function lhChart(g,tot){
+  // pts = [ts, spread, total, sharp_spread, public_spread] — a total card has
+  // no business showing the spread's history
+  var P=g.pts, W=300,H=84,L=6,R=6,T=8,B=14, MAIN=tot?2:1;
+  var vals=[];
+  P.forEach(function(p){(tot?[2]:[1,3,4]).forEach(function(i){if(p[i]!==null) vals.push(p[i]);});});
+  if(g.bet&&g.bet.sp!==null&&g.bet.sp!==undefined) vals.push(g.bet.sp);
+  if(vals.length<2) return '';
+  var lo=Math.min.apply(null,vals), hi=Math.max.apply(null,vals), pad=((hi-lo)||1)*0.25;
+  lo-=pad; hi+=pad;
+  var t0=P[0][0], t1=P[P.length-1][0], span=(t1-t0)||1;
+  function X(t){return L+(t-t0)/span*(W-L-R);}
+  function Y(v){return T+(hi-v)/(hi-lo)*(H-T-B);}
+  function line(idx){
+    var d='',on=false;
+    P.forEach(function(p){ if(p[idx]===null||p[idx]===undefined){on=false;return;}
+      d+=(on?'L':'M')+X(p[0]).toFixed(1)+','+Y(p[idx]).toFixed(1)+' '; on=true;});
+    return d;
+  }
+  var svg='<svg viewBox="0 0 '+W+' '+H+'">'+
+    '<line class="axis" x1="'+L+'" y1="'+(H-B)+'" x2="'+(W-R)+'" y2="'+(H-B)+'"/>'+
+    (tot?'':'<path class="pub" d="'+line(4)+'"/><path class="shp" d="'+line(3)+'"/>')+
+    '<path class="mkt" d="'+line(MAIN)+'"/>';
+  // where you would have got it
+  if(!tot&&g.bet&&typeof g.bet.sp==='number'){
+    var bx=X(Math.max(t0,Math.min(t1,g.bet.ts))), by=Y(g.bet.sp);
+    svg+='<line class="betl" x1="'+L+'" y1="'+by.toFixed(1)+'" x2="'+(W-R)+'" y2="'+
+         by.toFixed(1)+'"/><circle class="betd" cx="'+bx.toFixed(1)+'" cy="'+by.toFixed(1)+
+         '" r="3"/><text class="lab" x="'+Math.min(W-30,bx+6).toFixed(1)+'" y="'+
+         (by-5).toFixed(1)+'" fill="#ffcf5c">YOUR NUMBER</text>';
+  }
+  var last=P[P.length-1], sgn=function(v){return (!tot&&v>0?'+':'')+v;};
+  svg+='<circle class="dot" cx="'+X(last[0]).toFixed(1)+'" cy="'+Y(last[MAIN]).toFixed(1)+'" r="3"/>'+
+    '<text class="lab" x="'+L+'" y="'+(H-4)+'">OPENED '+sgn(P[0][MAIN])+'</text>'+
+    '<text class="lab" x="'+(W-R)+'" y="'+(H-4)+'" text-anchor="end">NOW '+
+    sgn(last[MAIN])+'</text></svg>';
+  return svg;
+}
+function lhBlock(key,tot){
+  var g=LH&&LH[key]; if(!g||!g.pts||g.pts.length<2) return '';
+  var o=tot?g.open.tot:g.open.sp, n=tot?g.now.tot:g.now.sp;
+  if(o===null||o===undefined||n===null||n===undefined) return '';
+  var move=n-o;
+  var tags='';
+  if(g.steam&&g.steam.length) tags+='<span class="tag steam">STEAM '+
+    (g.steam.length>1?g.steam.length+'×':'')+'</span>';
+  if(g.rlm) tags+='<span class="tag rlm">SHARP SPLIT</span>';
+  if(!tot&&g.bet&&typeof g.bet.sp==='number'&&g.now.sp!==null&&/SPREAD/.test(g.bet.play||'')){
+    // Did the number improve or run away after the play posted?
+    // Backing the home side you want the spread LESS negative than it is now
+    // (you laid fewer points); backing the away side it's the other way round.
+    var d=g.now.sp-g.bet.sp,
+        home=(g.bet.pick||'').indexOf(key.split('@')[1])===0,
+        beat=home?d<0:d>0;
+    tags+='<span class="tag '+(Math.abs(d)<0.25?'hold':(beat?'good':'bad'))+'">'+
+      (Math.abs(d)<0.25?'LINE HELD':(beat?'YOU BEAT IT ':'MOVED AGAINST ')+
+      Math.abs(d).toFixed(1))+'</span>';
+  }
+  var sg=function(v){return (!tot&&v>0?'+':'')+v;};
+  return '<div class="lh"><div class="hd"><span>'+(tot?'Total since it opened':'Since it opened')+
+    '</span><b>'+sg(o)+' → '+sg(n)+' ('+(move>0?'+':'')+move.toFixed(1)+')</b>'+tags+'</div>'+
+    lhChart(g,tot)+'<div class="key"><span><i style="background:#5ec8ff"></i>Consensus</span>'+
+    (tot?'':'<span><i style="background:#5ef2a5"></i>Sharp books</span>'+
+    '<span><i style="background:#8fa8c0"></i>Retail books</span>')+'</div></div>';
+}
+
+setTimeout(function(){
+  if(typeof LH!=='object'||!LH) return;
+
+  /* ---- full chart inside each slate drawer ---- */
+  var tb=document.querySelector('#slate table');
+  if(tb){
+    tb.addEventListener('click',function(){
+      setTimeout(function(){
+        var dr=tb.querySelector('tr.dr'); if(!dr||dr.querySelector('.lh')) return;
+        var row=dr.previousElementSibling; if(!row) return;
+        var lab=row.querySelector('.gm span:last-child')||row.querySelector('td b');
+        var k=lhKey(lab?lab.textContent:'');
+        // logos-only rows have no text left, so fall back to the two crests
+        if(!k){var c=row.querySelectorAll('.badge em');
+          if(c.length>1) k=c[0].textContent+'@'+c[1].textContent;}
+        var html=k?lhBlock(k):'';
+        if(html) dr.querySelector('.drawer').insertAdjacentHTML('beforeend',html);
+      },30);
+    });
+  }
+
+  /* ---- the same chart on the featured play and each pick card ---- */
+  document.querySelectorAll('.feat .fin, .slip .inner').forEach(function(box){
+    var sub=box.querySelector('.meta')||box.querySelector('.sub'); if(!sub) return;
+    var k=lhKey(sub.textContent);
+    if(!k){var c=box.querySelectorAll('.matchup .badge em, .vs .badge em');
+      if(c.length>1) k=c[0].textContent+'@'+c[1].textContent;}
+    var isTot=/·\s*Total/i.test(sub.textContent);
+    var html=k?lhBlock(k,isTot):'';
+    if(!html) return;
+    var why=box.querySelector('.why');
+    if(why) why.insertAdjacentHTML('beforebegin',html); else box.insertAdjacentHTML('beforeend',html);
+  });
+
+  /* ---- sparkline on every line-movement row ---- */
+  document.querySelectorAll('#slate table tr, .view table tr').forEach(function(r){
+    var td=r.querySelectorAll('td'); if(td.length<3) return;
+    if(r.querySelector('.spark')) return;
+    var lab=r.querySelector('.gm span:last-child')||r.querySelector('td b');
+    var k=lhKey(lab?lab.textContent:'');
+    if(!k){var c=r.querySelectorAll('.badge em'); if(c.length>1) k=c[0].textContent+'@'+c[1].textContent;}
+    var g=k&&LH[k]; if(!g) return;
+    // only the movement table (it has an arrow in the first data cell)
+    if(!/→/.test(td[1].textContent||'')) return;
+    var sp=lhSpark(g,78,22); if(!sp) return;
+    td[1].innerHTML='<span class="sparkcell">'+sp+td[1].innerHTML+'</span>';
+  });
+},0);
+
+/* ================= ANIMATED MESH HERO ==================================== */
+setTimeout(function(){
+  var f=document.querySelector('.feat'); if(!f) return;
+  var c1=f.style.getPropertyValue('--t1')||'#1f4f8f',
+      c2=f.style.getPropertyValue('--t2')||'#5ef2a5';
+  var cv=document.createElement('canvas'); cv.className='mesh';
+  f.insertBefore(cv,f.firstChild);
+  var ctx=cv.getContext('2d'), W=0,H=0, SC=0.34;           // half-res on purpose
+  function size(){var r=f.getBoundingClientRect();
+    W=cv.width=Math.max(60,Math.round(r.width*SC));
+    H=cv.height=Math.max(60,Math.round(r.height*SC));}
+  size(); addEventListener('resize',size);
+
+  function mix(a,b,t){a=a.replace('#','');b=b.replace('#','');
+    var o='#';for(var i=0;i<3;i++){var x=parseInt(a.substr(i*2,2),16),
+      y=parseInt(b.substr(i*2,2),16),v=Math.round(x+(y-x)*t);
+      o+=('0'+v.toString(16)).slice(-2);}return o;}
+  var blobs=[
+    {c:c1,   r:.62,x:.22,y:.30,sx:.00021,sy:.00013,px:0,py:2.1},
+    {c:c2,   r:.52,x:.78,y:.26,sx:.00017,sy:.00019,px:1.4,py:0.6},
+    {c:mix(c1,'#ffffff',.30),r:.42,x:.55,y:.72,sx:.00024,sy:.00011,px:3.1,py:1.7},
+    {c:mix(c2,'#000000',.25),r:.58,x:.12,y:.80,sx:.00013,sy:.00022,px:0.7,py:4.0},
+    {c:mix(c1,c2,.5),r:.36,x:.88,y:.68,sx:.00026,sy:.00016,px:2.2,py:3.3}
+  ];
+  function frame(t){
+    ctx.clearRect(0,0,W,H);
+    ctx.globalCompositeOperation='lighter';
+    blobs.forEach(function(b){
+      var x=(b.x+Math.sin(t*b.sx+b.px)*0.16)*W,
+          y=(b.y+Math.cos(t*b.sy+b.py)*0.18)*H,
+          r=b.r*Math.max(W,H)*0.55;
+      var g=ctx.createRadialGradient(x,y,0,x,y,r);
+      g.addColorStop(0,b.c); g.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r,0,6.2832); ctx.fill();
+    });
+  }
+  frame(0);
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  var run=true, vis=true, raf=null;
+  function loop(ts){ if(!run||!vis){raf=null;return;} frame(ts); raf=requestAnimationFrame(loop); }
+  function kick(){ if(run&&vis&&!raf) raf=requestAnimationFrame(loop); }
+  document.addEventListener('visibilitychange',function(){vis=!document.hidden; kick();});
+  if('IntersectionObserver' in window){
+    new IntersectionObserver(function(es){run=es[0].isIntersecting; kick();},
+      {threshold:0}).observe(f);
+  }
+  kick();
+},0);
+
+/* ================= INTERACTIVE POWER RATINGS MAP ========================= */
+setTimeout(function(){
+  var sec=document.getElementById('power'); if(!sec) return;
+  var tbl=sec.querySelector('table'); if(!tbl) return;
+
+  var teams=[];
+  [].slice.call(tbl.querySelectorAll('tr')).forEach(function(r){
+    var td=r.querySelectorAll('td'); if(td.length<5) return;
+    var b=td[1].querySelector('b'); if(!b) return;
+    var t=(b.textContent||'').trim();
+    var qb=(td[1].querySelector('small')||{}).textContent||'';
+    teams.push({t:t, qb:qb, rank:parseInt(td[0].textContent)||0,
+                p:parseFloat(td[2].textContent)||0,
+                o:parseFloat(td[3].textContent)||0,
+                d:parseFloat(td[4].textContent)||0});
+  });
+  if(teams.length<8) return;
+
+  var W=340,H=300,PAD=26;
+  var ox=teams.map(function(t){return t.o}), dx=teams.map(function(t){return t.d});
+  var oMax=Math.max(1,Math.max.apply(null,ox.map(Math.abs)))*1.15;
+  var dMax=Math.max(1,Math.max.apply(null,dx.map(Math.abs)))*1.15;
+  var X=function(o){return PAD+((o+oMax)/(2*oMax))*(W-2*PAD);};
+  var Y=function(d){return H-PAD-((d+dMax)/(2*dMax))*(H-2*PAD);};
+
+  var wrap=document.createElement('div'); wrap.className='mapwrap';
+  var bar=document.createElement('div'); bar.className='mapbar';
+  bar.innerHTML='<button class="on" data-z="fit">Fit</button>'+
+    '<button data-z="in">Zoom +</button><button data-z="out">Zoom −</button>'+
+    '<span class="hint">drag to pan · pinch to zoom · tap a team</span>';
+
+  var svg='<svg viewBox="0 0 '+W+' '+H+'">'+
+    '<g class="grid">';
+  for(var i=1;i<6;i++){
+    svg+='<line x1="'+(PAD+i*(W-2*PAD)/6)+'" y1="'+PAD+'" x2="'+(PAD+i*(W-2*PAD)/6)+
+         '" y2="'+(H-PAD)+'"/><line x1="'+PAD+'" y1="'+(PAD+i*(H-2*PAD)/6)+'" x2="'+(W-PAD)+
+         '" y2="'+(PAD+i*(H-2*PAD)/6)+'"/>';
+  }
+  svg+='<line class="mid" x1="'+X(0)+'" y1="'+PAD+'" x2="'+X(0)+'" y2="'+(H-PAD)+'"/>'+
+       '<line class="mid" x1="'+PAD+'" y1="'+Y(0)+'" x2="'+(W-PAD)+'" y2="'+Y(0)+'"/></g>'+
+    '<text class="quad" x="'+(W-PAD-4)+'" y="'+(PAD+10)+'" text-anchor="end">COMPLETE TEAMS</text>'+
+    '<text class="quad" x="'+(PAD+4)+'" y="'+(PAD+10)+'">DEFENSE CARRIES THEM</text>'+
+    '<text class="quad" x="'+(W-PAD-4)+'" y="'+(H-PAD-5)+'" text-anchor="end">SHOOTOUTS</text>'+
+    '<text class="quad" x="'+(PAD+4)+'" y="'+(H-PAD-5)+'">UGLY GAMES</text>'+
+    '<text class="axl" x="'+(W/2)+'" y="'+(H-6)+'" text-anchor="middle">OFFENSE →</text>'+
+    '<text class="axl" x="10" y="'+(H/2)+'" text-anchor="middle" transform="rotate(-90 10 '+
+      (H/2)+')">DEFENSE →</text>'+
+    '<g class="pan">';
+  teams.forEach(function(t){
+    var c=(window.TC&&TC[t.t])||['#24405f','#5ef2a5'];
+    svg+='<g class="node" data-t="'+t.t+'" transform="translate('+X(t.o).toFixed(1)+','+
+      Y(t.d).toFixed(1)+')"><circle class="bg" r="10" stroke="'+c[0]+'"/>'+
+      '<image href="logos/'+t.t.toLowerCase()+'.png" x="-8.5" y="-8.5" width="17" height="17"/>'+
+      '<text y="2.4" class="fb">'+t.t+'</text></g>';
+  });
+  svg+='</g></svg>';
+
+  wrap.innerHTML=svg+'<div class="mapcard"><span class="x">×</span>'+
+    '<b></b><div class="r"></div></div>';
+  var h2=document.createElement('h2'); h2.textContent='The league, mapped';
+  tbl.parentNode.insertBefore(h2,tbl);
+  tbl.parentNode.insertBefore(bar,tbl);
+  tbl.parentNode.insertBefore(wrap,tbl);
+  var tl=document.createElement('h2'); tl.textContent='Every team';
+  tbl.parentNode.insertBefore(tl,tbl);
+
+  // a logo that fails to load leaves the team code showing instead
+  wrap.querySelectorAll('.node').forEach(function(n){
+    var im=n.querySelector('image'), tx=n.querySelector('text');
+    im.addEventListener('load',function(){tx.style.display='none';});
+    im.addEventListener('error',function(){im.remove();});
+  });
+
+  /* ---- pan + zoom ---- */
+  var g=wrap.querySelector('.pan'), svgEl=wrap.querySelector('svg');
+  var z=1, tx0=0, ty0=0;
+  function apply(){g.setAttribute('transform','translate('+tx0.toFixed(1)+','+ty0.toFixed(1)+
+    ') scale('+z.toFixed(3)+')');}
+  function zoomAt(f,cx,cy){
+    var nz=Math.max(1,Math.min(6,z*f));
+    tx0=cx-(cx-tx0)*(nz/z); ty0=cy-(cy-ty0)*(nz/z); z=nz;
+    if(z===1){tx0=0;ty0=0;}
+    apply();
+  }
+  function pt(e){var r=svgEl.getBoundingClientRect();
+    return {x:(e.clientX-r.left)/r.width*W,y:(e.clientY-r.top)/r.height*H};}
+
+  var drag=null;
+  svgEl.addEventListener('pointerdown',function(e){
+    drag={p:pt(e),tx:tx0,ty:ty0,moved:0}; svgEl.setPointerCapture(e.pointerId);});
+  svgEl.addEventListener('pointermove',function(e){
+    if(!drag||pinch) return;
+    var p=pt(e); tx0=drag.tx+(p.x-drag.p.x); ty0=drag.ty+(p.y-drag.p.y);
+    drag.moved+=Math.abs(p.x-drag.p.x)+Math.abs(p.y-drag.p.y); apply();});
+  svgEl.addEventListener('pointerup',function(){drag=null;});
+  svgEl.addEventListener('wheel',function(e){
+    e.preventDefault(); var p=pt(e); zoomAt(e.deltaY<0?1.15:1/1.15,p.x,p.y);},{passive:false});
+
+  var pinch=null;
+  svgEl.addEventListener('touchstart',function(e){
+    if(e.touches.length===2){
+      var a=pt(e.touches[0]),b=pt(e.touches[1]);
+      pinch={d:Math.hypot(a.x-b.x,a.y-b.y),c:{x:(a.x+b.x)/2,y:(a.y+b.y)/2}};}},{passive:true});
+  svgEl.addEventListener('touchmove',function(e){
+    if(pinch&&e.touches.length===2){
+      var a=pt(e.touches[0]),b=pt(e.touches[1]),d=Math.hypot(a.x-b.x,a.y-b.y);
+      zoomAt(d/pinch.d,pinch.c.x,pinch.c.y); pinch.d=d;}},{passive:true});
+  svgEl.addEventListener('touchend',function(e){if(e.touches.length<2) pinch=null;},{passive:true});
+
+  bar.addEventListener('click',function(e){
+    var b=e.target.closest('button'); if(!b) return;
+    [].forEach.call(bar.querySelectorAll('button'),function(x){x.classList.remove('on')});
+    b.classList.add('on');
+    var k=b.dataset.z;
+    if(k==='fit'){z=1;tx0=0;ty0=0;apply();}
+    else zoomAt(k==='in'?1.4:1/1.4,W/2,H/2);
+  });
+
+  /* ---- tap a team ---- */
+  var card=wrap.querySelector('.mapcard');
+  wrap.addEventListener('click',function(e){
+    if(e.target.classList.contains('x')){card.classList.remove('on');
+      wrap.querySelectorAll('.node').forEach(function(n){n.classList.remove('dim')}); return;}
+    var n=e.target.closest('.node');
+    if(!n||(drag&&drag.moved>6)) return;
+    var t=teams.filter(function(x){return x.t===n.dataset.t})[0]; if(!t) return;
+    wrap.querySelectorAll('.node').forEach(function(x){x.classList.toggle('dim',x!==n)});
+    card.querySelector('b').textContent=t.t+(t.qb?' · '+t.qb:'');
+    card.querySelector('.r').innerHTML='<span>Rank <i>#'+t.rank+'</i></span>'+
+      '<span>Power <i>'+(t.p>0?'+':'')+t.p.toFixed(1)+'</i></span>'+
+      '<span>Off <i>'+(t.o>0?'+':'')+t.o.toFixed(1)+'</i></span>'+
+      '<span>Def <i>'+(t.d>0?'+':'')+t.d.toFixed(1)+'</i></span>';
+    card.classList.add('on');
+  });
+},0);
+
+/* ---------------- theme the app with the featured team ------------------- */
+/* deferred: the featured hero is built further down this file */
+setTimeout(function(){
+  var f=document.querySelector('.feat'); if(!f) return;
+  var c1=f.style.getPropertyValue('--t1'), c2=f.style.getPropertyValue('--t2');
+  // a very dark primary (Raiders black, Jets green) makes a useless accent —
+  // fall back to the secondary, and lift whatever we end up with until it reads
+  function lum(h){h=h.replace('#','');
+    var r=parseInt(h.substr(0,2),16),g=parseInt(h.substr(2,2),16),b=parseInt(h.substr(4,2),16);
+    return (0.2126*r+0.7152*g+0.0722*b)/255;}
+  function lift(h,amt){h=h.replace('#','');
+    var v=[0,2,4].map(function(i){var x=parseInt(h.substr(i,2),16);
+      return Math.round(x+(255-x)*amt);});
+    return '#'+v.map(function(x){return ('0'+x.toString(16)).slice(-2)}).join('');}
+  var acc=c1&&lum(c1)>0.17?c1:(c2&&lum(c2)>0.17?c2:c1||'#5ef2a5');
+  if(lum(acc)<0.34) acc=lift(acc,0.34);
+  document.documentElement.style.setProperty('--acc1',acc);
+  document.documentElement.style.setProperty('--acc2',acc);
+},0);
+
+/* ---------------- win probability bars ----------------------------------- */
+/* deferred: slate rows get their .gm class further down this file */
+setTimeout(function(){
+  var rows=document.querySelectorAll('#slate table tr.gm'); if(!rows.length) return;
+  function phi(z){ // standard normal CDF, Abramowitz-Stegun
+    var t=1/(1+0.2316419*Math.abs(z)),
+        d=0.3989423*Math.exp(-z*z/2),
+        p=d*t*(0.3193815+t*(-0.3565638+t*(1.781478+t*(-1.821256+t*1.330274))));
+    return z>0?1-p:p;}
+  rows.forEach(function(r){
+    var cells=r.querySelectorAll('td'); if(cells.length<3) return;
+    var cell=cells[0], gm=cell.querySelector('.gm'); if(!gm) return;
+    var b=cells[1].querySelector('b');
+    var m=parseFloat(b?b.textContent:(cells[1].firstChild||{}).textContent||'');
+    if(isNaN(m)) return;
+    // model spread is quoted from the home side: negative means home favoured
+    var ph=r.getAttribute('data-ph')?+r.getAttribute('data-ph'):phi(-m/16), pa=1-ph;
+    var codes=[].map.call(gm.querySelectorAll('.badge em'),function(x){return x.textContent;});
+    var ca=(window.TC&&TC[codes[0]])||['#3d5876'], ch=(window.TC&&TC[codes[1]])||['#5ef2a5'];
+    // a near-black primary (Saints, Raiders, Bears) vanishes against the bar —
+    // use that team's secondary instead so both halves stay readable
+    function vis(p){function L(h){h=h.replace('#','');
+        return (0.2126*parseInt(h.substr(0,2),16)+0.7152*parseInt(h.substr(2,2),16)
+               +0.0722*parseInt(h.substr(4,2),16))/255;}
+      return L(p[0])>0.16?p[0]:(p[1]||p[0]);}
+    var cA=vis(ca), cH=vis(ch);
+    var w=document.createElement('div'); w.className='wp';
+    w.innerHTML='<em class="'+(pa>ph?'hi':'')+'">'+Math.round(pa*100)+'%</em>'+
+      '<span class="wbar"><i style="width:'+(pa*100).toFixed(1)+'%;background:'+cA+
+      ';border-right:1px solid rgba(255,255,255,.3)"></i>'+
+      '<i style="width:'+(ph*100).toFixed(1)+'%;background:'+cH+'"></i></span>'+
+      '<em class="r '+(ph>=pa?'hi':'')+'">'+Math.round(ph*100)+'%</em>';
+    cell.appendChild(w);
+  });
+},0);
+
+/* ---------------- splash, pull-to-refresh, haptics, result flash --------- */
+(function(){
+  // splash: covers the first paint so the board never appears half-built
+  var sp=document.createElement('div'); sp.id='splash';
+  sp.innerHTML='<div class="mk">NFL</div><div class="ld"><i></i></div>';
+  document.body.appendChild(sp);
+  addEventListener('load',function(){setTimeout(function(){sp.classList.add('gone');},260);});
+  setTimeout(function(){sp.classList.add('gone');},2200);      // never trap the page
+
+  // pull down at the top of the page to rebuild from the server
+  var ptr=document.createElement('div'); ptr.id='ptr';
+  ptr.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"'+
+    ' stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>REFRESH';
+  document.body.appendChild(ptr);
+  var y0=null,pull=0;
+  addEventListener('touchstart',function(e){
+    y0=(scrollY<=0)?e.touches[0].clientY:null; pull=0;},{passive:true});
+  addEventListener('touchmove',function(e){
+    if(y0===null) return;
+    pull=Math.max(0,Math.min(96,(e.touches[0].clientY-y0)*0.55));
+    ptr.style.height=pull+'px'; ptr.style.opacity=Math.min(1,pull/60);},{passive:true});
+  addEventListener('touchend',function(){
+    if(y0!==null&&pull>62){ptr.classList.add('spin'); location.reload(); return;}
+    ptr.style.height='0px'; y0=null;},{passive:true});
+
+  // a short buzz when you change tabs (Android; iOS quietly ignores it)
+  var g=window.go;
+  window.go=function(t){ if(navigator.vibrate) try{navigator.vibrate(9);}catch(e){} g(t); };
+
+  // graded rows flash their result the first time they scroll into view
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(es){
+      es.forEach(function(en){
+        if(!en.isIntersecting) return;
+        en.target.classList.add('flash'); io.unobserve(en.target);
+        setTimeout(function(){en.target.classList.remove('flash');},1200);
+      });},{threshold:.6});
+    document.querySelectorAll('tr').forEach(function(r){
+      var w=r.querySelector('.res.w'), l=r.querySelector('.res.l');
+      if(!w&&!l) return;
+      if(l) r.classList.add('lose');
+      io.observe(r);
+    });
+  }
+})();
+
+/* ---------- stock-chart crosshair on the profit curve ---------- */
+(function(){
+  var svg=document.querySelector('.curve'); if(!svg||!svg.dataset.pts) return;
+  var box=svg.parentNode, pts=JSON.parse(svg.dataset.pts),
+      xs=svg.dataset.xs.split(',').map(Number), ys=svg.dataset.ys.split(',').map(Number),
+      VW=+svg.dataset.w, cross=svg.querySelector('.cross'), dot=svg.querySelector('.dot');
+  if(!pts.length) return;
+  var tip=document.createElement('div'); tip.className='tip'; box.appendChild(tip);
+
+  function at(clientX){
+    var r=svg.getBoundingClientRect();
+    var vx=(clientX-r.left)/r.width*VW;                    // page px -> viewBox units
+    var i=0,best=1e9;
+    for(var k=0;k<xs.length;k++){var d=Math.abs(xs[k]-vx); if(d<best){best=d;i=k;}}
+    var p=pts[i], cls=p.r==='W'?'w':(p.r==='L'?'l':'p'),
+        res=p.r==='W'?'WON':(p.r==='L'?'LOST':'PUSH');
+    cross.setAttribute('x1',xs[i]); cross.setAttribute('x2',xs[i]);
+    cross.setAttribute('opacity','.45');
+    dot.setAttribute('cx',xs[i]); dot.setAttribute('cy',ys[i]); dot.setAttribute('opacity','1');
+    tip.innerHTML='<span class="wk">Week '+p.w+' · '+(p.d||'')+'</span>'+
+      '<b>'+(p.p||'')+'</b>'+
+      '<div class="rowt"><span>Result</span><span class="'+cls+'">'+res+
+      ' '+(p.u>0?'+':'')+p.u+'u</span></div>'+
+      '<div class="rowt"><span>Running</span><span class="'+(p.t>=0?'w':'l')+'">'+
+      (p.t>0?'+':'')+p.t.toFixed(2)+'u</span></div>';
+    // keep the bubble inside the card
+    var px=xs[i]/VW*r.width, half=tip.offsetWidth/2+6;
+    tip.style.left=Math.max(half,Math.min(r.width-half,px))+'px';
+    tip.style.top=(ys[i]/90*svg.clientHeight)+'px';
+    tip.classList.add('on');
+  }
+  function off(){tip.classList.remove('on'); cross.setAttribute('opacity','0');
+                 dot.setAttribute('opacity','0');}
+
+  svg.addEventListener('mousemove',function(e){at(e.clientX);});
+  svg.addEventListener('mouseleave',off);
+  svg.addEventListener('touchstart',function(e){at(e.touches[0].clientX);},{passive:true});
+  svg.addEventListener('touchmove',function(e){at(e.touches[0].clientX);},{passive:true});
+  svg.addEventListener('touchend',off);
+})();
+
+function code(t){var m=(t||'').match(/\b([A-Z&]{2,5})\b/);return m&&TC[m[1]]?m[1]:null;}
+function num(t){var m=(t||'').match(/-?\d+(\.\d+)?/);return m?parseFloat(m[0]):null;}
+function badge(t,sm){var c=TC[t]||['#243244','#111'];
+  return '<div class="badge'+(sm?' sm':'')+'" style="--b1:'+c[0]+';--b2:'+c[1]+'">'+
+         '<s></s><em>'+t+'</em></div>';}
+function ring(p,size,sm){var r=size/2-4,C=2*Math.PI*r,O=C*(1-p/100),id='r'+Math.random().toString(36).slice(2,7);
+  return '<div class="ring'+(sm?' sm':'')+'" style="width:'+size+'px;height:'+size+'px;--C:'+C+';--O:'+O+'">'+
+   '<svg width="'+size+'" height="'+size+'"><circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+
+   '" fill="none" stroke="#172b44" stroke-width="'+(sm?4:6)+'"/><circle class="arc" cx="'+size/2+
+   '" cy="'+size/2+'" r="'+r+'" fill="none" stroke="url(#'+id+')" stroke-width="'+(sm?4:6)+
+   '" stroke-linecap="round"/><defs><linearGradient id="'+id+'" x1="0" y1="0" x2="1" y2="1">'+
+   '<stop offset="0" stop-color="#1f9e63"/><stop offset="1" stop-color="#5ef2a5"/></linearGradient>'+
+   '</defs></svg><i><b>'+Math.round(p)+'%</b><s>COVER</s></i></div>';}
+
+var slips=[].slice.call(document.querySelectorAll('.slip'));
+slips.forEach(function(s,idx){
+  var h=s.querySelector('h3'); if(!h) return;
+  // Every card gets the same treatment. A spread names its team in the headline
+  // ("DEN +2.5"); a total does not ("OVER 47.5"), so both read their teams off
+  // the line underneath. Before this, totals arrived with no crest, no colour
+  // band and no matchup strip — half the board looked like a different app.
+  var sub0=s.querySelector('.sub'), pair=null;
+  if(sub0){var mm=sub0.textContent.match(/([A-Z&]{2,5})\s*@\s*([A-Z&]{2,5})/);
+    if(mm&&TC[mm[1]]&&TC[mm[2]]) pair=[mm[1],mm[2]];}
+  var t=code(h.textContent);
+  if(!t&&!pair) return;
+  // a total belongs to both teams, so it wears one colour from each
+  var c=t?TC[t]:[TC[pair[0]][0],TC[pair[1]][0]];
+  s.classList.add('tm');
+  s.style.setProperty('--t1',c[0]); s.style.setProperty('--t2',c[1]);
+  var inner=document.createElement('div'); inner.className='inner';
+  while(s.firstChild) inner.appendChild(s.firstChild);
+  s.insertAdjacentHTML('beforeend','<i class="band"></i><i class="glow"></i>');
+  s.appendChild(inner);
+
+  var sub=inner.querySelector('.sub'), away=pair?pair[0]:null, home=pair?pair[1]:null;
+  if(away&&home){
+    var mu=document.createElement('div'); mu.className='matchup';
+    mu.innerHTML=badge(away,1)+away+' <span class="at">@</span> '+badge(home,1)+home;
+    inner.insertBefore(mu,inner.firstChild);
+  }
+  var wraph=document.createElement('div'); wraph.className='headline';
+  h.parentNode.insertBefore(wraph,h);
+  // spread: the crest of the team you are backing. total: both crests, because
+  // you are backing the game rather than a side.
+  if(t) wraph.insertAdjacentHTML('beforeend',badge(t));
+  else wraph.insertAdjacentHTML('beforeend',
+    '<span class="pairmark">'+badge(pair[0])+badge(pair[1])+'</span>');
+  wraph.appendChild(h);
+
+  var cv=inner.querySelector('.cover'), P=null;
+  if(cv){P=num(cv.textContent); if(P!==null){var d=document.createElement('div');
+    d.innerHTML=ring(P,62); cv.replaceWith(d.firstChild);}}
+
+  var mv=null,bv=null,ev=null;
+  inner.querySelectorAll('.facts li').forEach(function(li){
+    var k=(li.querySelector('span')||{}).textContent||'', v=(li.querySelector('b')||{}).textContent||'';
+    if(/model line/i.test(k)) mv=num(v);
+    if(/book line/i.test(k)) bv=num(v);
+    if(/edge/i.test(k)) ev=num(v);});
+  if(ev!==null){
+    var g=document.createElement('div'); g.className='gauge';
+    g.innerHTML='<div class="lbl"><span>Edge vs the book</span><b>'+(ev>0?'+':'')+ev.toFixed(1)+
+      ' pts</b></div><div class="track"><i style="--w:'+Math.min(100,Math.abs(ev)/7*100)+
+      '%"></i><u style="left:57%"></u></div><div class="ends"><span>Model '+
+      (mv!==null?mv.toFixed(1):'—')+'</span><span>Book '+(bv!==null?bv.toFixed(1):'—')+'</span></div>';
+    var why=inner.querySelector('.why'); why?inner.insertBefore(g,why):inner.appendChild(g);
+  }
+
+  // top play gets promoted into the hero
+  if(idx===0){
+    var tier=(inner.querySelector('.chip')||{}).textContent||'';
+    var feat=document.createElement('div'); feat.className='feat';
+    feat.style.setProperty('--t1',c[0]); feat.style.setProperty('--t2',c[1]);
+    feat.innerHTML='<div class="fin"><span class="tag">'+
+      (/MAX/i.test(tier)?'💎 TOP PLAY · 3U':
+       /STRONG/i.test(tier)?'🔥 TOP PLAY · 2U':'✅ TOP PLAY · 1U')+'</span>'+
+      '<div class="vs">'+badge(away||t)+'<span class="x">VS</span>'+badge(home||t)+'</div>'+
+      '<h1>'+h.textContent+'</h1><div class="meta">'+(sub?sub.textContent:'')+'</div>'+
+      '<div class="row"><div class="stat"><span>EDGE</span><b>'+(ev>0?'+':'')+
+      (ev!==null?ev.toFixed(1):'—')+'</b></div>'+(P!==null?ring(P,58):'')+
+      '<div class="stat"><span>MODEL</span><b>'+(mv!==null?mv.toFixed(1):'—')+'</b></div></div></div>';
+    var hero=document.querySelector('.hero');
+    hero.parentNode.insertBefore(feat,hero);
+    // don't print the same play twice: the featured card replaces the list entry
+    s.style.display='none';
+    // carry the explanation up into the hero so nothing is lost
+    var w=inner.querySelector('.why');
+    if(w){w.style.marginTop='16px';w.style.borderTopColor='rgba(255,255,255,.18)';
+          feat.querySelector('.fin').appendChild(w);}
+    var h2=document.querySelector('.view.on h2');
+    if(h2 && slips.length<2) h2.style.display='none';
+  }
+});
+
+// mini rings in the season tiles where the value is a percentage or a fraction
+document.querySelectorAll('.tile').forEach(function(tl){
+  var b=tl.querySelector('b'); if(!b) return;
+  var txt=b.textContent.trim(), p=null, m;
+  if((m=txt.match(/^(\d+)\/(\d+)$/))) p=+m[1]/+m[2]*100;
+  else if((m=txt.match(/^(\d+)-(\d+)(-\d+)?$/))) {var w=+m[1],l=+m[2]; if(w+l) p=w/(w+l)*100;}
+  var wrap=document.createElement('div'); wrap.className='txt';
+  while(tl.firstChild) wrap.appendChild(tl.firstChild);
+  if(p!==null){var d=document.createElement('div');
+    d.innerHTML=ring(p,42,1); d.firstChild.querySelector('s').textContent=(/\//.test(txt)?'RATE':'HIT');
+    tl.appendChild(d.firstChild);}
+  tl.appendChild(wrap);
+});
+
+// slate rows: both team badges
+document.querySelectorAll('td b').forEach(function(b){
+  var m=b.textContent.match(/^([A-Z&]{2,5})\s*@\s*([A-Z&]{2,5})/);
+  if(m&&TC[m[1]]&&TC[m[2]]){
+    var lbl=b.textContent;
+    b.innerHTML='<span class="gm">'+badge(m[1],1)+badge(m[2],1)+'<span>'+lbl+'</span></span>';
+  }
+});
+
+// the featured play belongs to the Bets tab only
+(function(){var f=document.querySelector('.feat'); if(!f) return;
+  var g=window.go; window.go=function(t){g(t); f.style.display=(t==='bets'?'':'none');};
+  var cur=document.querySelector('.view.on'); if(cur&&cur.id!=='bets') f.style.display='none';
+})();
+var ICONS={bets:'M12 2v20M5 7h14M5 17h14',slate:'M4 4h16v16H4zM4 9h16M9 9v11',
+ power:'M4 20V10M10 20V4M16 20v-7M22 20H2',props:'M3 12c4-6 14-6 18 0-4 6-14 6-18 0zM8 12h8',why:'M4 5h16v11H8l-4 4z',
+ record:'M3 18l5-6 4 3 6-8M3 21h18'};
+document.querySelectorAll('.tabbar a').forEach(function(a){
+  var k=a.getAttribute('data-t'), b=a.querySelector('b'); if(!b) return;
+  b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '+
+   'stroke-linecap="round" stroke-linejoin="round"><path d="'+(ICONS[k]||'M4 7h16M4 12h16M4 17h16')+'"/></svg>';
+});
+
+/* ---------- real logos when the folder is present ---------- */
+document.querySelectorAll('.badge').forEach(function(b){
+  var t=(b.querySelector('em')||{}).textContent; if(!t) return;
+  var im=new Image();
+  im.onload=function(){
+    b.classList.add('has'); b.appendChild(im);
+    // a strip whose crests are ALL real logos doesn't need the codes spelled out
+    var p=b.parentNode; if(!p) return;
+    var all=p.querySelectorAll('.badge'), done=p.querySelectorAll('.badge.has');
+    if(all.length && all.length===done.length) p.classList.add('logos');
+  };
+  im.src='logos/cfb/'+encodeURIComponent(t)+'.png';
+});
+
+/* ---------- one pinned bar: header, ticker and menu ---------- */
+/* The menu used to sit where it was written in the document, so opening it
+   from halfway down the page dropped it off-screen at the very top. It now
+   lives inside the pinned bar and hangs off the bottom of it, which means it
+   opens directly under the burger you just tapped, wherever you are. */
+function topbar(){
+  var bar=document.querySelector('.topbar');
+  if(!bar){
+    var nb=document.querySelector('.navbar');
+    bar=document.createElement('div'); bar.className='topbar';
+    nb.parentNode.insertBefore(bar,nb); bar.appendChild(nb);
+  }
+  return bar;
+}
+(function(){
+  var bar=topbar(), m=document.querySelector('.menu');
+  if(!m) return;
+  bar.appendChild(m);
+  // tapping anywhere off the menu closes it, same as tapping the burger again
+  document.addEventListener('click',function(e){
+    if(!m.classList.contains('open')) return;
+    var t=e.target;
+    if(m.contains(t)||(t.closest&&t.closest('.burger'))) return;
+    m.classList.remove('open');
+  });
+})();
+
+/* ---------- live kickoff ticker ---------- */
+(function(){
+  var rows=[].slice.call(document.querySelectorAll('#slate table tr'));
+  var items=[];
+  rows.forEach(function(r){
+    var c=r.querySelector('.clock'); if(!c) return;
+    var when=c.textContent.trim();
+    if(/final/i.test(when)) return;                 // only games still to come
+    var lab=r.querySelector('td .gm span:last-child')||r.querySelector('td b');
+    items.push('<b>'+((lab||{}).textContent||'').trim()+'</b> '+when);
+  });
+  if(!items.length) return;                       // nothing upcoming — no ticker at all
+  var t=document.createElement('div'); t.className='tick';
+  var run=items.slice(0,8).join(' &nbsp;·&nbsp; ');
+  t.innerHTML='<span class="k">KICKOFF</span><span class="scroller"><div>'+run+
+              ' &nbsp;·&nbsp; '+run+'</div></span>';
+  topbar().appendChild(t);                      // header + ticker travel together
+})();
+
+/* ---------- numbers count up ---------- */
+document.querySelectorAll('.rec div b,.feat .stat b').forEach(function(b){
+  var txt=b.textContent.trim(), m=txt.match(/^([+-]?)(\d+(?:\.\d+)?)(.*)$/);
+  if(!m || /-\d+-/.test(txt)) return;            // skip records like 8-7-1
+  var sign=m[1], end=parseFloat(m[2]), tail=m[3], dp=(m[2].split('.')[1]||'').length, t0=null;
+  function step(ts){ if(!t0) t0=ts; var p=Math.min(1,(ts-t0)/700);
+    var v=(end*(1-Math.pow(1-p,3)));
+    b.textContent=sign+v.toFixed(dp)+tail; if(p<1) requestAnimationFrame(step);}
+  b.textContent=sign+(0).toFixed(dp)+tail; requestAnimationFrame(step);
+});
+
+/* ---------- tap a slate row for the detail drawer ---------- */
+(function(){
+  var tb=document.querySelector('#slate table'); if(!tb) return;
+  [].slice.call(tb.querySelectorAll('tr')).forEach(function(r){
+    var cells=r.querySelectorAll('td'); if(cells.length<4) return;
+    r.classList.add('gm');
+    r.addEventListener('click',function(){
+      var nx=r.nextElementSibling;
+      if(nx&&nx.classList.contains('dr')){nx.remove();r.classList.remove('open');return;}
+      tb.querySelectorAll('tr.dr').forEach(function(x){x.remove()});
+      tb.querySelectorAll('tr.open').forEach(function(x){x.classList.remove('open')});
+      r.classList.add('open');
+      function val(i){var c=cells[i],b=c.querySelector('b');
+        var t=b?b.textContent:(c.firstChild?c.firstChild.textContent:'');
+        var v=parseFloat(t); return isNaN(v)?null:v;}
+      function sml(i){var s=cells[i].querySelector('small');
+        var v=s?parseFloat(s.textContent):NaN; return isNaN(v)?null:v;}
+      var mS=val(1),bS=val(2),eS=val(3),mT=sml(1),bT=sml(2),eT=sml(3);
+      function bar(lbl,m,b,e,unit){
+        if(m===null||b===null) return '';
+        var span=Math.max(Math.abs(m),Math.abs(b),1)*1.25;
+        function w(v){return Math.min(100,Math.abs(v)/span*100);}
+        return '<div class="mini"><span>'+lbl+' MODEL</span><div class="t"><i style="left:0;width:'+
+          w(m)+'%;background:linear-gradient(90deg,#1f9e63,#5ef2a5)"></i></div><b>'+m.toFixed(1)+
+          '</b></div><div class="mini"><span>'+lbl+' BOOK</span><div class="t"><i style="left:0;width:'+
+          w(b)+'%;background:#3d5876"></i></div><b>'+b.toFixed(1)+'</b></div>';
+      }
+      var note='';
+      if(eS!==null) note+='Model is '+Math.abs(eS).toFixed(1)+' pts '+(eS>0?'above':'below')+
+        ' the spread. ';
+      if(eT!==null) note+='Total is '+Math.abs(eT).toFixed(1)+' pts '+(eT>0?'over':'under')+
+        ' the number.';
+      var tr=document.createElement('tr'); tr.className='dr';
+      tr.innerHTML='<td colspan="'+cells.length+'"><div class="drawer">'+
+        bar('SPREAD',mS,bS,eS)+bar('TOTAL',mT,bT,eT)+
+        (note?'<div class="note">'+note+'</div>':'')+'</div></td>';
+      r.parentNode.insertBefore(tr,r.nextSibling);
+    });
+  });
+})();
+
+/* ---------- heat colour on the edge column ---------- */
+document.querySelectorAll('#slate table td.n b').forEach(function(b){
+  var v=parseFloat(b.textContent); if(isNaN(v)) return;
+  if(!/^[+-]/.test(b.textContent.trim())) return;
+  b.className=Math.abs(v)>=4?'heat1':(Math.abs(v)>=2.5?'heat2':'heat0');
+});
+
+/* ---------- swipe between tabs ---------- */
+(function(){
+  var order=['bets','slate','power','why','record'], x0=null,y0=null;
+  addEventListener('touchstart',function(e){x0=e.touches[0].clientX;y0=e.touches[0].clientY;},{passive:true});
+  addEventListener('touchend',function(e){
+    if(x0===null) return;
+    var dx=e.changedTouches[0].clientX-x0, dy=e.changedTouches[0].clientY-y0;
+    x0=null; if(Math.abs(dx)<60||Math.abs(dy)>50) return;
+    var cur=(document.querySelector('.view.on')||{}).id, i=order.indexOf(cur);
+    if(i<0) return;
+    var j=i+(dx<0?1:-1); if(j<0||j>=order.length) return;
+    window.go(order[j]);
+  },{passive:true});
+})();
+</script>
+<script>window.addEventListener('load',function(){var h=(location.hash||'').slice(1);if(h&&typeof go==='function'){try{go(h)}catch(e){}}})</script></body></html>
